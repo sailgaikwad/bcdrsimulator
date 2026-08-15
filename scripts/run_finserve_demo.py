@@ -175,5 +175,16 @@ def run_demo():
             mtpd_breach = "YES" if impact.mtpd_breached else "NO"
             print(f"  {svc.name}: MTPD Breached={mtpd_breach}, Revenue Lost=INR {impact.revenue_lost:,.2f}, Downtime={impact.downtime_hours:.2f}h")
 
+    # 8. Save the run to GCS directly to test export
+    from app.cloud.gcp_exporter import GCPExporter
+    print("\n--- Exporting Run to GCS ---")
+    
+    exporter = GCPExporter()
+    success = exporter.export_simulation_run(engine.run_data)
+    if success:
+        print("Run exported to GCS successfully.")
+    else:
+        print("Run export to GCS failed.")
+
 if __name__ == "__main__":
     run_demo()

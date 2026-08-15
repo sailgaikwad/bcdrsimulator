@@ -1,0 +1,19 @@
+[
+  {"name": "id", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "org_id", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "scenario_id", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "rng_seed", "type": "INTEGER", "mode": "REQUIRED"},
+  {"name": "status", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "start_time", "type": "FLOAT", "mode": "NULLABLE"},
+  {"name": "end_time", "type": "FLOAT", "mode": "NULLABLE"},
+  {"name": "total_downtime_hours", "type": "FLOAT", "mode": "NULLABLE"},
+  {"name": "final_resilience_score", "type": "FLOAT", "mode": "NULLABLE"},
+  {"name": "final_risk_level", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "decisions_json", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "config_json", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "schema_version", "type": "STRING", "mode": "REQUIRED"},
+  {"name": "state_snapshot_json", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "event_ledger_json", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "timeline_json", "type": "STRING", "mode": "NULLABLE"},
+  {"name": "team_id", "type": "STRING", "mode": "NULLABLE"}
+]

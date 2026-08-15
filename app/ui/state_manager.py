@@ -15,6 +15,9 @@ from app.models.enums import SystemType, DependencyType, StrategyType, DisasterC
 from app.models.disaster import DisasterScenario, AffectedSystem
 from app.graph.dependency_graph import DependencyGraph
 from app.core.simulation_engine import SimulationEngine
+from app.cloud.gcp_exporter import GCPExporter
+import json
+from app.database.repositories import SimulationRunRepository
 
 
 def init_session_state():
@@ -186,12 +189,23 @@ def save_current_run(engine: SimulationEngine):
         for e in engine.scoring.get_ledger()
     ]
     
-    # 3. Serialize and save
+    # 3. Serialize and save to local SQLite FIRST
     engine.run_data.state_snapshot_json = json.dumps(state_snapshot)
     engine.run_data.event_ledger_json = json.dumps(ledger)
     engine.run_data.schema_version = "1.0"
     
     run_repo.save(engine.run_data)
+    
+    # 4. Attempt optional GCS export
+    try:
+        exporter = GCPExporter()
+        success = exporter.export_simulation_run(engine.run_data)
+        if not success:
+            st.warning("Simulation saved locally, but Cloud Storage export failed. See logs for details.", icon="⚠️")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"GCS export integration failed: {e}")
+    
     
 def load_historical_run(run_id: str) -> SimulationRun:
     """Load a historical run for read-only viewing."""

@@ -1,0 +1,9 @@
+{
+  "jsonOptions": {
+    "encoding": "UTF-8"
+  },
+  "sourceFormat": "NEWLINE_DELIMITED_JSON",
+  "sourceUris": [
+    "gs://bcdrsimulator-exports-507135369511/runs/*.json"
+  ]
+}
