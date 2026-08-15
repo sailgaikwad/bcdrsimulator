@@ -60,5 +60,5 @@ def render():
             
     st.markdown("---")
     st.subheader("Current Resource Pool")
-    st.write(f"**Available Team Capacity:** {engine.resource_pool.team_capacity}")
-    st.write(f"**Budget Remaining:** INR {engine.resource_pool.budget_remaining:,.2f}")
+    st.write(f"**Available Team Capacity:** {engine.recovery.resource_pool.team_capacity}")
+    st.write(f"**Budget Remaining:** INR {engine.recovery.resource_pool.budget_remaining:,.2f}")

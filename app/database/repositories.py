@@ -417,3 +417,39 @@ class RecoveryStrategyRepository:
                 risk_reduction=row["risk_reduction"],
                 description=row["description"],
             )
+
+class DisasterScenarioRepository:
+    """CRUD operations for disaster scenarios."""
+
+    def __init__(self, db: SQLiteManager):
+        self.db = db
+
+    def save(self, scenario: DisasterScenario) -> None:
+        with self.db.connection() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO scenarios 
+                (id, name, category, description, severity, propagation_probability, scenario_json) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    scenario.id,
+                    scenario.name,
+                    scenario.category.value,
+                    scenario.description,
+                    scenario.severity,
+                    scenario.propagation_probability,
+                    scenario.model_dump_json(),
+                ),
+            )
+
+    def get(self, scenario_id: str) -> Optional[DisasterScenario]:
+        with self.db.connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM scenarios WHERE id = ?", (scenario_id,)
+            ).fetchone()
+            if row is None:
+                return None
+            import json
+            data = json.loads(row["scenario_json"])
+            return DisasterScenario(**data)

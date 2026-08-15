@@ -40,10 +40,10 @@ def render():
         # internal method _sample_duration
         
         # We need to compute potential business outcome if this duration applies
-        sampled_dur = engine.recovery._sample_duration(strat)
+        sampled_dur = engine.recovery.sample_recovery_duration(strat)
         
         # We can see if it fits in budget
-        can_afford = engine.resource_pool.can_start_recovery(strat.resource_cost, strat.monetary_cost)
+        can_afford = engine.recovery.resource_pool.can_start_recovery(strat.resource_cost, strat.monetary_cost)
         
         comparison_data.append({
             "Strategy": strat.name,

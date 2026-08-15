@@ -262,6 +262,10 @@ class BIAEngine:
     def get_impact(self, service_id: str) -> Optional[ServiceImpact]:
         return self._impacts.get(service_id)
 
+    def get_system_dependencies(self, service_id: str) -> list[str]:
+        """Get the system IDs that a business service depends on."""
+        return self._service_system_map.get(service_id, [])
+
     def get_all_impacts(self) -> list[ServiceImpact]:
         return list(self._impacts.values())
 

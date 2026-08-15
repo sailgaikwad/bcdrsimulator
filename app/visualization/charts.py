@@ -90,7 +90,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
             
             # Find mapped services
             for svc in engine.services:
-                if sys_id in engine.bia.service_systems_map.get(svc.id, []):
+                if sys_id in engine.bia.get_system_dependencies(svc.id):
                     svc_idx = get_node(svc.name)
                     sources.append(s_idx)
                     targets.append(svc_idx)

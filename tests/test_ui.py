@@ -63,3 +63,76 @@ def test_strategy_comparison_load():
     
     assert not at.exception
     assert "Recovery Strategy Comparison" in at.header[0].value
+
+def test_impact_flow_regression():
+    """Regression test for the Impact Flow charts rendering after a disaster step."""
+    at = AppTest.from_file("../app/main.py").run()
+    
+    # 1. Trigger Disaster
+    at.sidebar.radio[0].set_value("Simulation").run()
+    trigger_btn = next((b for b in at.button if "Trigger Disaster" in b.label), None)
+    trigger_btn.click().run()
+    
+    # 2. Step Simulation
+    step_btn = next((b for b in at.button if "Step (+30m)" in b.label), None)
+    if step_btn:
+        step_btn.click().run()
+    
+    # 3. View Dashboard
+    at.sidebar.radio[0].set_value("Dashboard").run()
+    
+    assert not at.exception
+
+def test_recovery_planning_integration():
+    """Bug 1 Regression: Ensure recovery planning doesn't crash from resource_pool reference."""
+    at = AppTest.from_file("../app/main.py").run()
+    
+    # 1. Trigger Disaster
+    at.sidebar.radio[0].set_value("Simulation").run()
+    trigger_btn = next((b for b in at.button if "Trigger Disaster" in b.label), None)
+    if trigger_btn:
+        trigger_btn.click().run()
+        
+    at.sidebar.radio[0].set_value("Recovery Planning").run()
+    assert not at.exception
+    assert "Recovery Planning" in at.header[0].value
+    assert any("Current Resource Pool" in sh.value for sh in at.subheader)
+
+def test_strategy_comparison_sampling():
+    """Bug 2 Regression: Ensure Strategy Comparison uses correct RNG API."""
+    at = AppTest.from_file("../app/main.py").run()
+    at.sidebar.radio[0].set_value("Strategy Comparison").run()
+    assert not at.exception
+    assert "Recovery Strategy Comparison" in at.header[0].value
+    # If the sampled_duration accessor failed, it would throw an exception by now.
+
+def test_save_run_foreign_key_integrity():
+    """Bug 3 Regression: Ensure Saving a Run doesn't violate scenarios FK constraint."""
+    at = AppTest.from_file("../app/main.py").run()
+    at.sidebar.radio[0].set_value("Simulation").run()
+    
+    trigger_btn = next((b for b in at.button if "Trigger Disaster" in b.label), None)
+    if trigger_btn:
+        trigger_btn.click().run(timeout=10)
+    
+    # Bypass UI to avoid timeout
+    at.session_state["engine"].run_until_empty()
+    at.run()
+    
+    save_run_btn = next((b for b in at.button if "Save Run" in b.label), None)
+    if save_run_btn:
+        save_run_btn.click().run(timeout=10)
+        
+    for e in at.error:
+        print("ERROR:", e.value)
+    for e in at.exception:
+        print("EXCEPTION:", e)
+        
+    assert not at.exception
+    
+    # Verify in DB
+    from app.database.sqlite_manager import SQLiteManager
+    db = SQLiteManager("bcdr.db")
+    with db.connection() as conn:
+        count = conn.execute("SELECT COUNT(*) FROM simulation_runs").fetchone()[0]
+        assert count > 0

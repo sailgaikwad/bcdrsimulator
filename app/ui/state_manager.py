@@ -4,7 +4,7 @@ import os
 from app.database.sqlite_manager import SQLiteManager
 from app.database.repositories import (
     OrganizationRepository, BusinessServiceRepository, SystemRepository,
-    DependencyRepository, RecoveryStrategyRepository
+    DependencyRepository, RecoveryStrategyRepository, DisasterScenarioRepository
 )
 from app.models.organization import Organization, BusinessService
 from app.models.system import System
@@ -51,6 +51,7 @@ def _load_finserve_demo(db: SQLiteManager):
     sys_repo = SystemRepository(db)
     dep_repo = DependencyRepository(db)
     strat_repo = RecoveryStrategyRepository(db)
+    scenario_repo = DisasterScenarioRepository(db)
     
     org = Organization(id="org-finserve", name="FinServe Demo", industry="Finance")
     org_repo.save(org)
@@ -108,6 +109,13 @@ def _load_finserve_demo(db: SQLiteManager):
     strat_repo.save(strat_restore)
     strat_repo.save(strat_failover)
 
+    # Scenarios
+    scenario = DisasterScenario(
+        id="scen-db-fail", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
+        affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
+    )
+    scenario_repo.save(scenario)
+
 
 def _init_simulation_engine():
     """Constructs the SimulationEngine from DB state and saves it to session."""
@@ -135,10 +143,13 @@ def _init_simulation_engine():
         graph.add_dependency(dep)
 
     # Currently active scenario
-    scenario = DisasterScenario(
-        id="scen-db-fail", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
-        affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
-    )
+    scenario = DisasterScenarioRepository(db).get("scen-db-fail")
+    if not scenario:
+        # Fallback if somehow not loaded (should not happen if loaded correctly)
+        scenario = DisasterScenario(
+            id="scen-db-fail", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
+            affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
+        )
     
     run_data = SimulationRun(org_id=org.id, scenario_id=scenario.id, rng_seed=42)
     pool = ResourcePool(team_capacity=5, budget_remaining=50000.0)
