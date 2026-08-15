@@ -207,7 +207,7 @@ def save_current_run(engine: SimulationEngine):
         logging.getLogger(__name__).error(f"GCS export integration failed: {e}")
     
     
-def load_historical_run(run_id: str) -> SimulationRun:
+def load_historical_run(run_id: str) -> Optional[SimulationRun]:
     """Load a historical run for read-only viewing."""
     db: SQLiteManager = st.session_state["db"]
     run_repo = SimulationRunRepository(db)

@@ -1,9 +1,8 @@
 import plotly.graph_objects as go
 import networkx as nx
 
-from app.graph.dependency_graph import DependencyGraph
 from app.core.simulation_engine import SimulationEngine
-from app.database.repositories import BusinessServiceRepository, SystemRepository
+from app.database.repositories import SystemRepository
 from app.database.sqlite_manager import SQLiteManager
 
 def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Figure:
