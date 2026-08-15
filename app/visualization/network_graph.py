@@ -81,8 +81,7 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
 
     fig = go.Figure(data=[edge_trace, node_trace],
              layout=go.Layout(
-                title='<br>System Dependency Graph',
-                titlefont_size=16,
+                title=dict(text='<br>System Dependency Graph', font=dict(size=16)),
                 showlegend=False,
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
