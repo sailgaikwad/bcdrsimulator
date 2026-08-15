@@ -30,8 +30,10 @@ def render_sidebar():
         "Disaster Scenarios",
         "Simulation",
         "Recovery Planning",
+        "Strategy Comparison",
         "Risk Analysis",
         "Business Impact Analysis",
+        "Historical Runs",
     ])
     
     st.sidebar.markdown("---")
@@ -61,10 +63,16 @@ def main():
         simulation.render()
     elif page == "Recovery Planning":
         recovery.render()
+    elif page == "Strategy Comparison":
+        import app.ui.strategy_comparison as strategy_comparison
+        strategy_comparison.render()
     elif page == "Risk Analysis":
         risk.render()
     elif page == "Business Impact Analysis":
         bia.render()
+    elif page == "Historical Runs":
+        import app.ui.history as history
+        history.render()
 
 if __name__ == "__main__":
     main()

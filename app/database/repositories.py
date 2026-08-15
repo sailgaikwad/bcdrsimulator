@@ -216,14 +216,17 @@ class SimulationRunRepository:
                 """INSERT OR REPLACE INTO simulation_runs
                    (id, org_id, scenario_id, rng_seed, status, start_time, end_time,
                     total_downtime_hours, final_resilience_score, final_risk_level,
-                    decisions_json, config_json, team_id, completed_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    decisions_json, config_json, schema_version, state_snapshot_json,
+                    event_ledger_json, timeline_json, team_id, completed_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     run.id, run.org_id, run.scenario_id, run.rng_seed,
                     run.status.value, run.start_time, run.end_time,
                     run.total_downtime_hours, run.final_resilience_score,
                     run.final_risk_level.value if run.final_risk_level else None,
-                    run.decisions_json, run.config_json, run.team_id, None,
+                    run.decisions_json, run.config_json, run.schema_version,
+                    run.state_snapshot_json, run.event_ledger_json, run.timeline_json,
+                    run.team_id, None,
                 ),
             )
 
@@ -243,7 +246,12 @@ class SimulationRunRepository:
                 final_resilience_score=row["final_resilience_score"],
                 final_risk_level=row["final_risk_level"],
                 decisions_json=row["decisions_json"],
-                config_json=row["config_json"], team_id=row["team_id"],
+                config_json=row["config_json"],
+                schema_version=row["schema_version"],
+                state_snapshot_json=row["state_snapshot_json"],
+                event_ledger_json=row["event_ledger_json"],
+                timeline_json=row["timeline_json"],
+                team_id=row["team_id"],
             )
 
     def list_by_org(self, org_id: str, limit: int = 50) -> list[SimulationRun]:
@@ -262,7 +270,12 @@ class SimulationRunRepository:
                     final_resilience_score=r["final_resilience_score"],
                     final_risk_level=r["final_risk_level"],
                     decisions_json=r["decisions_json"],
-                    config_json=r["config_json"], team_id=r["team_id"],
+                    config_json=r["config_json"],
+                    schema_version=r["schema_version"],
+                    state_snapshot_json=r["state_snapshot_json"],
+                    event_ledger_json=r["event_ledger_json"],
+                    timeline_json=r["timeline_json"],
+                    team_id=r["team_id"],
                 )
                 for r in rows
             ]

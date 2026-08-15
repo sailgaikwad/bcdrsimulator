@@ -102,6 +102,10 @@ CREATE TABLE IF NOT EXISTS simulation_runs (
     final_risk_level TEXT,
     decisions_json TEXT,
     config_json TEXT,
+    schema_version TEXT DEFAULT '1.0',
+    state_snapshot_json TEXT,
+    event_ledger_json TEXT,
+    timeline_json TEXT,
     team_id TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP

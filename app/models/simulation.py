@@ -41,6 +41,10 @@ class SimulationRun(BaseModel):
     final_risk_level: Optional[RiskLevel] = None
     decisions_json: Optional[str] = None
     config_json: Optional[str] = None
+    schema_version: str = Field(default="1.0")
+    state_snapshot_json: Optional[str] = None
+    event_ledger_json: Optional[str] = None
+    timeline_json: Optional[str] = None
     team_id: Optional[str] = None          # future-ready
 
     model_config = {"frozen": False}

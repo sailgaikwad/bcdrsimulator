@@ -10,7 +10,7 @@ from app.models.organization import Organization, BusinessService
 from app.models.system import System
 from app.models.dependency import Dependency
 from app.models.recovery import RecoveryStrategy
-from app.models.simulation import SimulationRun, ResourcePool
+from app.models.simulation import SimulationRun, ResourcePool, ScoreEvent
 from app.models.enums import SystemType, DependencyType, StrategyType, DisasterCategory
 from app.models.disaster import DisasterScenario, AffectedSystem
 from app.graph.dependency_graph import DependencyGraph
@@ -137,7 +137,7 @@ def _init_simulation_engine():
         affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
     )
     
-    run_data = SimulationRun(id="run-interactive", org_id=org.id, scenario_id=scenario.id, rng_seed=42)
+    run_data = SimulationRun(org_id=org.id, scenario_id=scenario.id, rng_seed=42)
     pool = ResourcePool(team_capacity=5, budget_remaining=50000.0)
 
     engine = SimulationEngine(
@@ -151,3 +151,50 @@ def _init_simulation_engine():
     st.session_state["engine"] = engine
     st.session_state["active_scenario"] = scenario
     st.session_state["recovery_strategies"] = RecoveryStrategyRepository(db).list_all()
+
+import json
+from app.database.repositories import SimulationRunRepository
+
+def save_current_run(engine: SimulationEngine):
+    """Serialize the canonical run details to SQLite."""
+    db: SQLiteManager = st.session_state["db"]
+    run_repo = SimulationRunRepository(db)
+    
+    # 1. State Snapshot
+    state_snapshot = {
+        "systems": {
+            sys_id: {"effective_availability": state.effective_availability}
+            for sys_id, state in engine.system_states.items()
+        },
+        "services": []
+    }
+    for svc in engine.services:
+        impact = engine.bia.get_impact(svc.id)
+        if impact:
+            state_snapshot["services"].append({
+                "service_id": svc.id,
+                "name": svc.name,
+                "downtime_hours": impact.downtime_hours,
+                "revenue_lost": impact.revenue_lost,
+                "mtpd_breached": impact.mtpd_breached,
+                "rto_target": svc.rto_hours
+            })
+            
+    # 2. Event Ledger
+    ledger = [
+        {"category": e.category.value, "delta": e.delta, "reason": e.reason, "time": e.event_time}
+        for e in engine.scoring.get_ledger()
+    ]
+    
+    # 3. Serialize and save
+    engine.run_data.state_snapshot_json = json.dumps(state_snapshot)
+    engine.run_data.event_ledger_json = json.dumps(ledger)
+    engine.run_data.schema_version = "1.0"
+    
+    run_repo.save(engine.run_data)
+    
+def load_historical_run(run_id: str) -> SimulationRun:
+    """Load a historical run for read-only viewing."""
+    db: SQLiteManager = st.session_state["db"]
+    run_repo = SimulationRunRepository(db)
+    return run_repo.get(run_id)

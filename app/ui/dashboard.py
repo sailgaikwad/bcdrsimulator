@@ -1,6 +1,7 @@
 import streamlit as st
 from app.core.simulation_engine import SimulationEngine
 from app.models.enums import SimulationStatus
+from app.visualization import charts
 
 def render():
     st.header("Dashboard")
@@ -64,9 +65,19 @@ def render():
             
     if services_data:
         st.dataframe(services_data, use_container_width=True)
+        
+        st.subheader("RTO & MTPD Visualization")
+        fig_rto = charts.generate_rto_comparison(engine)
+        st.plotly_chart(fig_rto, use_container_width=True, key="rto_chart")
     else:
         st.write("No services affected yet.")
         
+    st.markdown("---")
+    
+    st.subheader("Score Timeline")
+    fig_score = charts.generate_score_timeline(engine)
+    st.plotly_chart(fig_score, use_container_width=True, key="score_chart")
+
     st.markdown("---")
     
     col_sys, col_spof = st.columns(2)
@@ -88,6 +99,12 @@ def render():
     with col_spof:
         st.subheader("Recommendations & SPOF")
         # In a full implementation, we'd query GraphAnalysis for articulation points.
-        # For Milestone 1, we can just list the known SPOFs from the demo graph.
+        # For Milestone 2, we can just list the known SPOFs from the demo graph.
         st.info("💡 **Recommendation**: Primary Database is a Single Point of Failure (SPOF) for Payment Processing. Implement automated failover to the Read Replica.")
         st.info("💡 **Recommendation**: Increase backup frequency to reduce potential RPO breaches.")
+        
+    st.markdown("---")
+    st.subheader("Impact Flow Diagram")
+    st.markdown("Visualizing the technical failure cascading to service degradation and ultimate business outcome.")
+    fig_flow = charts.generate_impact_flow(engine)
+    st.plotly_chart(fig_flow, use_container_width=True, key="impact_flow")
