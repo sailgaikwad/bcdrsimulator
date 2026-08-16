@@ -3,8 +3,9 @@ import streamlit as st
 def inject_custom_css():
     st.markdown("""
         <style>
-        /* Import Inter Font */
+        /* Import Inter Font and Material Symbols */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
 
         /* Global Typography and Base Styling */
         html, body, [class*="css"] {
@@ -48,10 +49,12 @@ def inject_custom_css():
         }
 
         /* Sidebar Radio Navigation Hack */
-        /* Make the radio buttons look like clean navigation links */
+        /* Make the radio buttons look like a clean, full-width SaaS navigation */
         div[role="radiogroup"] {
-            gap: 0.25rem !important;
+            gap: 0.5rem !important; /* Generous spacing */
         }
+        
+        /* Ensure the label covers the full width and acts as a flex container */
         div[role="radiogroup"] > label {
             padding: 0.75rem 1rem !important;
             margin: 0 !important;
@@ -59,22 +62,59 @@ def inject_custom_css():
             cursor: pointer;
             transition: all 0.2s ease;
             background-color: transparent;
+            display: flex !important;
+            align-items: center !important;
+            width: 100% !important;
         }
+        
         div[role="radiogroup"] > label:hover {
             background-color: var(--bg-color) !important;
         }
-        /* Hide the actual radio circle completely */
+        
+        /* Hide the actual radio circle and any extra padding elements completely */
         div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
             display: none !important;
         }
         
+        /* The text container */
+        div[role="radiogroup"] > label p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            margin: 0;
+            width: 100%;
+        }
+        
+        /* Inject Icons using Material Symbols ligatures */
+        div[role="radiogroup"] > label p::before {
+            font-family: 'Material Symbols Outlined';
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+        div[role="radiogroup"] > label:nth-child(1) p::before { content: 'dashboard'; }
+        div[role="radiogroup"] > label:nth-child(2) p::before { content: 'dns'; }
+        div[role="radiogroup"] > label:nth-child(3) p::before { content: 'hub'; }
+        div[role="radiogroup"] > label:nth-child(4) p::before { content: 'warning'; }
+        div[role="radiogroup"] > label:nth-child(5) p::before { content: 'play_circle'; }
+        div[role="radiogroup"] > label:nth-child(6) p::before { content: 'build'; }
+        div[role="radiogroup"] > label:nth-child(7) p::before { content: 'balance'; }
+        div[role="radiogroup"] > label:nth-child(8) p::before { content: 'security'; }
+        div[role="radiogroup"] > label:nth-child(9) p::before { content: 'analytics'; }
+        div[role="radiogroup"] > label:nth-child(10) p::before { content: 'history'; }
+        
         /* Style the active selected state */
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
             background-color: var(--primary-light) !important;
-            color: var(--text-main) !important;
         }
-        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p {
-            color: var(--text-main) !important;
+        
+        /* Bright Blue (#3b82f6) for the active text and icon */
+        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p,
+        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p::before {
+            color: #3b82f6 !important;
             font-weight: 600;
         }
 
