@@ -20,4 +20,4 @@ def render():
     dynamic_key = f"dep_graph_{len(engine.processed_events)}"
     st.plotly_chart(fig, use_container_width=True, key=dynamic_key)
     
-    st.info("🟢 Healthy (100%) | 🟠 Degraded (1-99%) | 🔴 Failed (0%)")
+    st.info("🟢 Healthy (100%) | 🔵 Recovering | 🟠 Degraded | 🔴 Failed (0%) &nbsp;&nbsp; **Edges:** ─── Hard | - - Sync | ··· Disrupted")

@@ -63,10 +63,11 @@ def inject_custom_css():
         div[role="radiogroup"] > label:hover {
             background-color: var(--bg-color) !important;
         }
-        /* Hide the actual radio circle */
-        div[role="radiogroup"] > label > div:first-child {
+        /* Hide the actual radio circle completely */
+        div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
             display: none !important;
         }
+        
         /* Style the active selected state */
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
             background-color: var(--primary-light) !important;

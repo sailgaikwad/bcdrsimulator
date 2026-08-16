@@ -143,20 +143,7 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                annotations=[dict(
-                    x=0.0,
-                    y=1.0,
-                    xref='paper',
-                    yref='paper',
-                    text='<b>Legend</b><br><span style="color:#10b981">●</span> Healthy (100%)<br><span style="color:#0ea5e9">●</span> Recovering<br><span style="color:#f59e0b">●</span> Degraded<br><span style="color:#f43f5e">●</span> Failed (0%)<br><span style="color:#94a3b8">───</span> Hard Edge<br><span style="color:#cbd5e1">- -</span> Sync Edge<br><span style="color:#f43f5e">···</span> Disrupted Edge',
-                    showarrow=False,
-                    align='left',
-                    bgcolor='rgba(255,255,255,0.8)',
-                    borderwidth=1,
-                    bordercolor='#e2e8f0',
-                    borderpad=8
-                )]
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
              )
     )
              
