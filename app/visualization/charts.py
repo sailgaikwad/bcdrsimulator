@@ -45,11 +45,11 @@ def generate_score_timeline(engine: SimulationEngine) -> go.Figure:
 
     final_score = engine.scoring.get_composite_score()
 
-    fig = px.line(x=times, y=scores, markers=True, title="Composite Resilience Score Timeline")
+    fig = px.line(x=times, y=scores, markers=True, title="Composite Resilience Score Timeline", color_discrete_sequence=["#3b82f6"])
     fig.add_hline(
         y=final_score,
         line_dash="dot",
-        line_color="#4f46e5",
+        line_color="#3b82f6",
         annotation_text=f"Current: {final_score:.1f}",
         annotation_position="bottom right",
     )

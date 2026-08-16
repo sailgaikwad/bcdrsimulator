@@ -13,17 +13,18 @@ def inject_custom_css():
 
         /* Color Palette Overrides */
         :root {
-            --primary-color: #4f46e5; /* Indigo 600 */
-            --primary-hover: #4338ca; /* Indigo 700 */
-            --bg-color: #f8fafc;      /* Slate 50 */
+            --primary-color: #3b82f6; /* Blue 500 */
+            --primary-hover: #2563eb; /* Blue 600 */
+            --primary-light: #eff6ff; /* Blue 50 */
+            --bg-color: #f3f4f6;      /* Gray 100 */
             --card-bg: #ffffff;
-            --text-main: #1e293b;     /* Slate 800 */
-            --text-muted: #64748b;    /* Slate 500 */
+            --text-main: #111827;     /* Gray 900 */
+            --text-muted: #6b7280;    /* Gray 500 */
             --success: #10b981;       /* Emerald 500 */
             --warning: #f59e0b;       /* Amber 500 */
             --danger: #f43f5e;        /* Rose 500 */
             --info: #0ea5e9;          /* Sky 500 */
-            --border-color: #e2e8f0;  /* Slate 200 */
+            --border-color: #e5e7eb;  /* Gray 200 */
         }
         
         /* Main Application Background */
@@ -68,12 +69,12 @@ def inject_custom_css():
         }
         /* Style the active selected state */
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
-            background-color: var(--primary-color) !important;
-            color: white !important;
+            background-color: var(--primary-light) !important;
+            color: var(--primary-color) !important;
         }
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p {
-            color: white !important;
-            font-weight: 500;
+            color: var(--primary-color) !important;
+            font-weight: 600;
         }
 
         /* Streamlit Primary Button Styling */
@@ -106,11 +107,11 @@ def inject_custom_css():
 
         /* Container Border Overrides to look like tailwind cards */
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
-            border-radius: 0.75rem !important;
-            border: 1px solid var(--border-color) !important;
+            border-radius: 1.25rem !important; /* Large rounded corners */
+            border: none !important;           /* Remove border, rely on shadow */
             background-color: var(--card-bg) !important;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
-            padding: 1.25rem !important;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 3px rgba(0,0,0,0.02) !important; /* Soft, diffused shadow */
+            padding: 1.5rem !important;
         }
 
         /* Expander Styling */
