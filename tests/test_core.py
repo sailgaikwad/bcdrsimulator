@@ -255,3 +255,41 @@ def test_simulation_engine_determinism():
     assert dur1 == dur2
     assert score1 == score2
     assert dur1 != dur3 # Different seed should yield different duration
+
+def test_finserve_dependency_propagation():
+    """Verify FinServe dependency graph processes Event 1 & Event 2 correctly."""
+    run_data = SimulationRun(id="run1", org_id="org1", scenario_id="scen1", rng_seed=42)
+    graph = DependencyGraph()
+    
+    # Systems
+    sys_igw = System(id="sys-igw", org_id="org1", name="Internet Gateway", system_type=SystemType.GATEWAY)
+    sys_fw = System(id="sys-fw", org_id="org1", name="Firewall", system_type=SystemType.FIREWALL)
+    sys_app = System(id="sys-app", org_id="org1", name="Application Cluster", system_type=SystemType.APPLICATION)
+    sys_db_primary = System(id="sys-db-pri", org_id="org1", name="Primary Database", system_type=SystemType.DATABASE)
+    sys_cache = System(id="sys-cache", org_id="org1", name="Cache", system_type=SystemType.CACHE)
+    
+    for s in [sys_igw, sys_fw, sys_app, sys_db_primary, sys_cache]:
+        graph.add_system(s)
+        
+    # The corrected dependencies
+    graph.add_dependency(Dependency(id="d1", org_id="org1", source_id="sys-igw", target_id="sys-fw", dep_type=DependencyType.HARD))
+    graph.add_dependency(Dependency(id="d2", org_id="org1", source_id="sys-fw", target_id="sys-app", dep_type=DependencyType.HARD))
+    graph.add_dependency(Dependency(id="d3", org_id="org1", source_id="sys-db-pri", target_id="sys-app", dep_type=DependencyType.HARD))
+    graph.add_dependency(Dependency(id="d4", org_id="org1", source_id="sys-cache", target_id="sys-app", dep_type=DependencyType.SOFT, weight=0.3))
+    
+    engine = SimulationEngine(
+        run_data=run_data,
+        dep_graph=graph,
+        services=[],
+        service_systems_map={},
+        resource_pool=ResourcePool()
+    )
+    
+    # Trigger Disaster (Event 1): Primary DB fails 100%
+    engine.trigger_disaster({"sys-db-pri": 1.0})
+    
+    # compute_initial_cascade propagates immediately
+    assert engine.system_states["sys-db-pri"].health == 0.0
+    
+    # Now Application Cluster should have effective availability 0.0 due to HARD dependency on DB
+    assert engine.system_states["sys-app"].effective_availability == 0.0
