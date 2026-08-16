@@ -55,7 +55,7 @@ def inject_custom_css():
         }
         
         /* Ensure the label covers the full width and acts as a flex container */
-        div[role="radiogroup"] > label {
+        div[role="radiogroup"] label {
             padding: 0.75rem 1rem !important;
             margin: 0 !important;
             border-radius: 0.5rem;
@@ -67,17 +67,22 @@ def inject_custom_css():
             width: 100% !important;
         }
         
-        div[role="radiogroup"] > label:hover {
+        div[role="radiogroup"] label:hover {
             background-color: var(--bg-color) !important;
         }
         
-        /* Hide the actual radio circle and any extra padding elements completely */
-        div[role="radiogroup"] label[data-baseweb="radio"] > div:first-child {
+        /* Hide the actual radio circle completely - use aggressive selectors */
+        div[role="radiogroup"] label > div:first-child:not(:last-child),
+        div[role="radiogroup"] label div[data-baseweb="radio"],
+        div[role="radiogroup"] input[type="radio"] {
             display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            opacity: 0 !important;
         }
         
         /* The text container */
-        div[role="radiogroup"] > label p {
+        div[role="radiogroup"] label p {
             font-size: 0.95rem;
             color: var(--text-muted);
             font-weight: 500;
@@ -88,32 +93,37 @@ def inject_custom_css():
         }
         
         /* Inject Icons using Material Symbols ligatures */
-        div[role="radiogroup"] > label p::before {
+        div[role="radiogroup"] label p::before {
             font-family: 'Material Symbols Outlined';
             font-size: 1.25rem;
             margin-right: 0.75rem;
             color: var(--text-muted);
             transition: color 0.2s ease;
         }
-        div[role="radiogroup"] > label:nth-child(1) p::before { content: 'dashboard'; }
-        div[role="radiogroup"] > label:nth-child(2) p::before { content: 'dns'; }
-        div[role="radiogroup"] > label:nth-child(3) p::before { content: 'hub'; }
-        div[role="radiogroup"] > label:nth-child(4) p::before { content: 'warning'; }
-        div[role="radiogroup"] > label:nth-child(5) p::before { content: 'play_circle'; }
-        div[role="radiogroup"] > label:nth-child(6) p::before { content: 'build'; }
-        div[role="radiogroup"] > label:nth-child(7) p::before { content: 'balance'; }
-        div[role="radiogroup"] > label:nth-child(8) p::before { content: 'security'; }
-        div[role="radiogroup"] > label:nth-child(9) p::before { content: 'analytics'; }
-        div[role="radiogroup"] > label:nth-child(10) p::before { content: 'history'; }
+        
+        /* Target by nth-of-type if wrapped in divs, otherwise nth-child */
+        div[role="radiogroup"] > div:nth-child(1) label p::before, div[role="radiogroup"] > label:nth-child(1) p::before { content: 'dashboard'; }
+        div[role="radiogroup"] > div:nth-child(2) label p::before, div[role="radiogroup"] > label:nth-child(2) p::before { content: 'dns'; }
+        div[role="radiogroup"] > div:nth-child(3) label p::before, div[role="radiogroup"] > label:nth-child(3) p::before { content: 'hub'; }
+        div[role="radiogroup"] > div:nth-child(4) label p::before, div[role="radiogroup"] > label:nth-child(4) p::before { content: 'warning'; }
+        div[role="radiogroup"] > div:nth-child(5) label p::before, div[role="radiogroup"] > label:nth-child(5) p::before { content: 'play_circle'; }
+        div[role="radiogroup"] > div:nth-child(6) label p::before, div[role="radiogroup"] > label:nth-child(6) p::before { content: 'build'; }
+        div[role="radiogroup"] > div:nth-child(7) label p::before, div[role="radiogroup"] > label:nth-child(7) p::before { content: 'balance'; }
+        div[role="radiogroup"] > div:nth-child(8) label p::before, div[role="radiogroup"] > label:nth-child(8) p::before { content: 'security'; }
+        div[role="radiogroup"] > div:nth-child(9) label p::before, div[role="radiogroup"] > label:nth-child(9) p::before { content: 'analytics'; }
+        div[role="radiogroup"] > div:nth-child(10) label p::before, div[role="radiogroup"] > label:nth-child(10) p::before { content: 'history'; }
         
         /* Style the active selected state */
-        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"],
+        div[role="radiogroup"] label:has(input:checked) {
             background-color: var(--primary-light) !important;
         }
         
         /* Bright Blue (#3b82f6) for the active text and icon */
-        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p,
-        div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p::before {
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] p,
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] p::before,
+        div[role="radiogroup"] label:has(input:checked) p,
+        div[role="radiogroup"] label:has(input:checked) p::before {
             color: #3b82f6 !important;
             font-weight: 600;
         }
