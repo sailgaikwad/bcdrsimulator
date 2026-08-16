@@ -86,34 +86,65 @@ def _load_finserve_demo(db: SQLiteManager):
         sys_repo.save(sys)
 
     deps = [
-        Dependency(id="d1", org_id=org.id, source_id=sys_igw.id, target_id=sys_fw.id, dep_type=DependencyType.HARD),
-        Dependency(id="d2", org_id=org.id, source_id=sys_fw.id, target_id=sys_app.id, dep_type=DependencyType.HARD),
-        Dependency(id="d3", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_app.id, dep_type=DependencyType.HARD),
+        Dependency(id="d1", org_id=org.id, source_id=sys_igw.id, target_id=sys_fw.id, dep_type=DependencyType.HARD, weight=1.0),
+        Dependency(id="d2", org_id=org.id, source_id=sys_fw.id, target_id=sys_app.id, dep_type=DependencyType.HARD, weight=1.0),
+        Dependency(id="d3", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_app.id, dep_type=DependencyType.HARD, weight=0.8),
         Dependency(id="d4", org_id=org.id, source_id=sys_cache.id, target_id=sys_app.id, dep_type=DependencyType.SOFT, weight=0.3),
-        Dependency(id="d5", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_db_replica.id, dep_type=DependencyType.DATA_SYNC),
-        Dependency(id="d6", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_backup.id, dep_type=DependencyType.DATA_SYNC),
+        Dependency(id="d5", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_db_replica.id, dep_type=DependencyType.DATA_SYNC, weight=1.0),
+        Dependency(id="d6", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_backup.id, dep_type=DependencyType.DATA_SYNC, weight=1.0),
     ]
     for dep in deps:
         dep_repo.save(dep)
 
     # Recovery Strategies
     strat_restore = RecoveryStrategy(
-        id="strat-restore", name="Restore from Backup", strategy_type=StrategyType.BACKUP_RESTORE,
-        optimistic_hours=2.0, likely_hours=4.0, pessimistic_hours=8.0, resource_cost=2.0
+        id="strat-restore", name="Restore from Cold Backup", strategy_type=StrategyType.BACKUP_RESTORE,
+        optimistic_hours=4.0, likely_hours=6.0, pessimistic_hours=12.0, resource_cost=2.0, monetary_cost=5000.0
     )
     strat_failover = RecoveryStrategy(
-        id="strat-failover", name="Failover to Replica", strategy_type=StrategyType.FAILOVER,
-        optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=1.0
+        id="strat-failover", name="Failover to Read Replica", strategy_type=StrategyType.FAILOVER,
+        optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=1.0, monetary_cost=0.0
     )
-    strat_repo.save(strat_restore)
-    strat_repo.save(strat_failover)
+    strat_promote = RecoveryStrategy(
+        id="strat-promote", name="Promote Replica to Master", strategy_type=StrategyType.FAILOVER,
+        optimistic_hours=1.0, likely_hours=2.0, pessimistic_hours=3.0, resource_cost=2.0, monetary_cost=0.0
+    )
+    strat_restart = RecoveryStrategy(
+        id="strat-restart", name="Rolling Restart App Cluster", strategy_type=StrategyType.WORKAROUND,
+        optimistic_hours=0.2, likely_hours=0.5, pessimistic_hours=1.0, resource_cost=1.0, monetary_cost=0.0
+    )
+    strat_reroute = RecoveryStrategy(
+        id="strat-reroute", name="Traffic Rerouting", strategy_type=StrategyType.WORKAROUND,
+        optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=2.0, monetary_cost=0.0
+    )
+    for s in [strat_restore, strat_failover, strat_promote, strat_restart, strat_reroute]:
+        strat_repo.save(s)
 
     # Scenarios
-    scenario = DisasterScenario(
-        id="scen-db-fail", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
-        affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
+    scenario_db = DisasterScenario(
+        id="scen-db-fail-cascade", name="Database Cluster Failure", category=DisasterCategory.DATABASE_FAILURE,
+        affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
+        severity=1.0
     )
-    scenario_repo.save(scenario)
+    scenario_az = DisasterScenario(
+        id="scen-az-outage", name="Datacenter / AZ Outage", category=DisasterCategory.INFRASTRUCTURE_OUTAGE,
+        affected_systems=[
+            AffectedSystem(system_id="sys-igw", health_impact=1.0),
+            AffectedSystem(system_id="sys-fw", health_impact=1.0),
+            AffectedSystem(system_id="sys-db-pri", health_impact=1.0)
+        ],
+        severity=1.0
+    )
+    scenario_ransomware = DisasterScenario(
+        id="scen-ransomware", name="Ransomware Storage Compromise", category=DisasterCategory.CYBER_ATTACK,
+        affected_systems=[
+            AffectedSystem(system_id="sys-db-pri", health_impact=1.0),
+            AffectedSystem(system_id="sys-backup", health_impact=0.8)
+        ],
+        severity=1.0
+    )
+    for s in [scenario_db, scenario_az, scenario_ransomware]:
+        scenario_repo.save(s)
 
 
 def _init_simulation_engine():
@@ -142,12 +173,13 @@ def _init_simulation_engine():
         graph.add_dependency(dep)
 
     # Currently active scenario
-    scenario = DisasterScenarioRepository(db).get("scen-db-fail")
+    scenario = DisasterScenarioRepository(db).get("scen-db-fail-cascade")
     if not scenario:
         # Fallback if somehow not loaded (should not happen if loaded correctly)
         scenario = DisasterScenario(
-            id="scen-db-fail", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
-            affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)]
+            id="scen-db-fail-cascade", name="Database Cluster Failure", category=DisasterCategory.DATABASE_FAILURE,
+            affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
+            severity=1.0
         )
     
     run_data = SimulationRun(org_id=org.id, scenario_id=scenario.id, rng_seed=42)

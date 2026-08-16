@@ -62,7 +62,6 @@ class SimulationEngine:
         self.processed_events = []
         self.scoring = ScoringEngine(run_data.id)
         self.investigation = InvestigationEngine(run_data.id, self.rng)
-        self.recovery = RecoveryEngine(run_data.id, self.rng, self.scoring, resource_pool)
         self.propagation = FailurePropagationEngine(dep_graph)
         self.risk = RiskEngine()
         self.bia = BIAEngine(run_data.id, self.scoring)
@@ -70,6 +69,8 @@ class SimulationEngine:
         # Runtime state
         self.current_time: float = 0.0
         self.system_states: dict[str, SystemState] = {}
+        
+        self.recovery = RecoveryEngine(run_data.id, self.rng, self.scoring, resource_pool, self.dep_graph, self.system_states)
         
         # Initialize runtime state for all systems
         for sys_id in self.dep_graph.get_all_system_ids():
@@ -232,9 +233,28 @@ class SimulationEngine:
                 self.schedule_event(e)
                 
             # Log the change
-            event.description += f" -> state changed from {old_eff:.1%} to {new_eff:.1%}"
+            target_name = sys_id
+            target_data = self.dep_graph.get_node_data(sys_id)
+            if target_data and "name" in target_data:
+                target_name = target_data["name"]
+                
+            upstream_id = event.payload.get("upstream_id")
+            upstream_name = upstream_id
+            if upstream_id:
+                up_data = self.dep_graph.get_node_data(upstream_id)
+                if up_data and "name" in up_data:
+                    upstream_name = up_data["name"]
+
+            if new_eff == 0.0:
+                event.description = f"{target_name} failed completely (0%) due to upstream {upstream_name} state change."
+            elif new_eff < 1.0 and new_eff < old_eff:
+                event.description = f"{target_name} health degraded to {new_eff:.0%} due to upstream {upstream_name} degradation."
+            elif new_eff < 1.0 and new_eff > old_eff:
+                event.description = f"{target_name} health improved to {new_eff:.0%} following upstream {upstream_name} recovery."
+            elif new_eff == 1.0:
+                event.description = f"{target_name} fully recovered to 100% following upstream {upstream_name} recovery."
         else:
-            event.description += " -> no change in availability"
+            event.description = f"Propagation check for {sys_id}: no change in availability."
 
     def _handle_recovery_start(self, event: SimulationEvent) -> None:
         """Handle the start of a recovery action."""

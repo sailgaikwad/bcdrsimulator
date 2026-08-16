@@ -85,7 +85,8 @@ class FailurePropagationEngine:
             dep_type = edge_data.get("dep_type", "hard")
 
             if dep_type == DependencyType.DATA_SYNC.value or dep_type == DependencyType.DATA_SYNC:
-                continue
+                # Sync dependency: degraded source leads to stale/unsynced replica
+                hard_factor *= (upstream_eff * weight + (1.0 - weight))
             elif dep_type == DependencyType.HARD.value or dep_type == DependencyType.HARD:
                 # Hard dependency: multiplicative reduction
                 hard_factor *= (upstream_eff * weight + (1.0 - weight))

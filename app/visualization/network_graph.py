@@ -38,13 +38,22 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
     edge_y = []
     edge_dash_x = []
     edge_dash_y = []
+    edge_disrupted_x = []
+    edge_disrupted_y = []
     
     for edge in G.edges(data=True):
-        x0, y0 = pos[edge[0]]
+        src = edge[0]
+        x0, y0 = pos[src]
         x1, y1 = pos[edge[1]]
         
+        src_state = engine.system_states.get(src)
+        src_avail = src_state.effective_availability if src_state else 1.0
+        
         dep_type = edge[2].get('dep_type')
-        if dep_type == DependencyType.DATA_SYNC.value or dep_type == DependencyType.DATA_SYNC:
+        if src_avail < 1.0:
+            edge_disrupted_x.extend([x0, x1, None])
+            edge_disrupted_y.extend([y0, y1, None])
+        elif dep_type == DependencyType.DATA_SYNC.value or dep_type == DependencyType.DATA_SYNC:
             edge_dash_x.extend([x0, x1, None])
             edge_dash_y.extend([y0, y1, None])
         else:
@@ -65,6 +74,13 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
         mode='lines'
     )
 
+    edge_disrupted_trace = go.Scatter(
+        x=edge_disrupted_x, y=edge_disrupted_y,
+        line=dict(width=2.0, color='red', dash='dot'),
+        hoverinfo='none',
+        mode='lines'
+    )
+
     node_x = []
     node_y = []
     node_colors = []
@@ -80,9 +96,13 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
         # Determine state
         state = engine.system_states.get(node)
         avail = state.effective_availability if state else 1.0
+        is_recovering = engine.recovery.is_system_recovering(node)
         
-        # Colors: Green=1.0, Yellow=0.1-0.99, Red=0.0
-        if avail >= 1.0:
+        # Colors: Blue=Recovering, Green=1.0, Yellow=0.1-0.99, Red=0.0
+        if is_recovering:
+            color = 'blue'
+            status_text = "Recovering"
+        elif avail >= 1.0:
             color = 'green'
             status_text = "Healthy"
         elif avail <= 0.0:
@@ -113,7 +133,7 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
         )
     )
 
-    fig = go.Figure(data=[edge_trace, edge_dash_trace, node_trace],
+    fig = go.Figure(data=[edge_trace, edge_dash_trace, edge_disrupted_trace, node_trace],
              layout=go.Layout(
                 title=dict(text='<br>System Dependency Graph', font=dict(size=16)),
                 showlegend=False,

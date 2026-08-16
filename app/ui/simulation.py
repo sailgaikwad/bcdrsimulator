@@ -108,9 +108,22 @@ def render():
     with tab1:
         sys_data = []
         for sys_id, state in engine.system_states.items():
+            is_recovering = engine.recovery.is_system_recovering(sys_id)
+            avail = state.effective_availability * 100
+            
+            if is_recovering:
+                status = "Recovering 🔄"
+            elif avail >= 100:
+                status = "Healthy 🟢"
+            elif avail <= 0:
+                status = "Failed 🔴"
+            else:
+                status = "Degraded 🟡"
+
             sys_data.append({
                 "System": sys_id,
-                "Availability": f"{state.effective_availability*100:.0f}%"
+                "Availability": f"{avail:.0f}%",
+                "Status": status
             })
         st.dataframe(sys_data, use_container_width=True)
         

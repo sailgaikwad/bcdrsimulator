@@ -1,6 +1,7 @@
 import streamlit as st
 from app.core.simulation_engine import SimulationEngine
 from app.models.recovery import RecoveryStrategy
+from app.models.enums import DependencyType
 
 def render():
     st.header("Recovery Planning & Execution")
@@ -26,6 +27,18 @@ def render():
         
     target_sys = st.selectbox("Select Target System", failed_systems)
     
+    # Check upstream health
+    blocked_by = []
+    for upstream_id, edge_data in engine.dep_graph.get_upstream(target_sys):
+        dep_type = edge_data.get("dep_type", "hard")
+        if dep_type in [DependencyType.HARD.value, DependencyType.HARD, DependencyType.DATA_SYNC.value, DependencyType.DATA_SYNC]:
+            upstream_state = engine.system_states.get(upstream_id)
+            if upstream_state and upstream_state.effective_availability < 1.0:
+                blocked_by.append(upstream_id)
+                
+    if blocked_by:
+        st.error(f"Recovery of {target_sys} is blocked. Critical upstream dependencies must be recovered first: {', '.join(blocked_by)}")
+    
     # Display Strategies
     st.subheader("Available Strategies")
     
@@ -46,7 +59,8 @@ def render():
     st.markdown("---")
     
     # Action
-    if st.button("Initiate Recovery", type="primary"):
+    is_disabled = len(blocked_by) > 0
+    if st.button("Initiate Recovery", type="primary", disabled=is_disabled):
         if target_sys in engine.recovery._active_plans:
             st.warning("A recovery is already active for this system.")
         else:

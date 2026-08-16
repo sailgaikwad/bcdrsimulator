@@ -63,6 +63,7 @@ class StrategyType(str, Enum):
     CLOUD_RECOVERY = "cloud_recovery"
     MANUAL_RECOVERY = "manual_recovery"
     REDUNDANCY = "redundancy"
+    WORKAROUND = "workaround"
 
 
 class RiskLevel(str, Enum):
@@ -140,3 +141,5 @@ class DisasterCategory(str, Enum):
     CYBERATTACK = "cyberattack"
     CLOUD_SERVICE_OUTAGE = "cloud_service_outage"
     SUPPLY_CHAIN = "supply_chain"
+    INFRASTRUCTURE_OUTAGE = "infrastructure_outage"
+    CYBER_ATTACK = "cyber_attack"

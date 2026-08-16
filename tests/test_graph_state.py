@@ -29,14 +29,14 @@ def test_dependency_graph_rendering_states():
     
     # Test E: Reset simulation -> graph returns to initial healthy state
     fig = generate_plotly_graph(engine, db)
-    colors = fig.data[2].marker.color
+    colors = fig.data[-1].marker.color
     assert all(c == 'green' for c in colors), "Graph should initially be completely green"
     
     # Test A: Trigger disaster
     engine.trigger_disaster({"sys-db-pri": 1.0})
     fig = generate_plotly_graph(engine, db)
-    colors = fig.data[2].marker.color
-    texts = fig.data[2].text
+    colors = fig.data[-1].marker.color
+    texts = fig.data[-1].text
     node_to_color = dict(zip(texts, colors))
     
     assert node_to_color["sys-db-pri"] == 'red', "Primary DB should be red after disaster"
@@ -45,8 +45,8 @@ def test_dependency_graph_rendering_states():
     # Test B: Process next propagation event
     engine.step()  # Should be the propagation to sys-app
     fig = generate_plotly_graph(engine, db)
-    colors = fig.data[2].marker.color
-    node_to_color = dict(zip(fig.data[2].text, colors))
+    colors = fig.data[-1].marker.color
+    node_to_color = dict(zip(fig.data[-1].text, colors))
     
     assert node_to_color["sys-app"] == 'red', "App cluster should be red after propagation"
     
@@ -63,8 +63,8 @@ def test_dependency_graph_rendering_states():
     print("STEP 2:", evt2)
     
     fig = generate_plotly_graph(engine, db)
-    colors = fig.data[2].marker.color
-    node_to_color = dict(zip(fig.data[2].text, colors))
+    colors = fig.data[-1].marker.color
+    node_to_color = dict(zip(fig.data[-1].text, colors))
     
     assert node_to_color["sys-db-pri"] == 'green', "Primary DB should be green after recovery"
     assert node_to_color["sys-app"] == 'green', "App cluster should be green after recovery propagation"

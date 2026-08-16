@@ -14,7 +14,7 @@ from typing import Optional
 
 from app.models.recovery import RecoveryStrategy, RecoveryPlan
 from app.models.simulation import SimulationEvent, ResourcePool
-from app.models.enums import EventType, ScoreCategory, StrategyType
+from app.models.enums import EventType, ScoreCategory, StrategyType, DependencyType
 from app.core.scoring import ScoringEngine
 
 
@@ -33,11 +33,15 @@ class RecoveryEngine:
         rng: random.Random,
         scoring: ScoringEngine,
         resource_pool: ResourcePool,
+        dep_graph=None,
+        system_states=None,
     ):
         self.run_id = run_id
         self._rng = rng
         self._scoring = scoring
         self._resources = resource_pool
+        self._dep_graph = dep_graph
+        self._system_states = system_states
         self._active_plans: dict[str, RecoveryPlan] = {}  # system_id → plan
         self._completed_plans: list[RecoveryPlan] = []
 
@@ -90,6 +94,22 @@ class RecoveryEngine:
         if system_id in self._active_plans:
             return None, None
             
+        # Check upstream prerequisites
+        if self._dep_graph and self._system_states:
+            for upstream_id, edge_data in self._dep_graph.get_upstream(system_id):
+                dep_type = edge_data.get("dep_type", "hard")
+                if dep_type in [DependencyType.HARD.value, DependencyType.HARD, DependencyType.DATA_SYNC.value, DependencyType.DATA_SYNC]:
+                    upstream_state = self._system_states.get(upstream_id)
+                    if upstream_state and upstream_state.effective_availability < 1.0:
+                        self._scoring.record(
+                            category=ScoreCategory.RESOURCE_EFFICIENCY,
+                            delta=-2.0,
+                            reason=f"Recovery of {system_id} blocked: Upstream dependency {upstream_id} is not fully operational.",
+                            event_time=current_time,
+                            decision_id=decision_id,
+                        )
+                        return None, None
+                        
         if not self.can_start_recovery(strategy):
             self._scoring.record(
                 category=ScoreCategory.RESOURCE_EFFICIENCY,
