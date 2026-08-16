@@ -121,12 +121,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         sys_names.append(name)
         health_lost_pct.append(round(loss, 1))
 
-        if avail <= 0.0:
-            sys_colors.append("#e53935")   # Failed — red
-        elif avail < 0.5:
-            sys_colors.append("#fb8c00")   # Severely degraded — orange
-        else:
-            sys_colors.append("#fdd835")   # Mildly degraded — yellow
+        sys_colors.append("#fb8c00")  # Always orange, as requested
 
     # ── Gather service business impact data ───────────────────────────────────
     svc_names = []
@@ -145,10 +140,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         svc_rto.append(svc.rto_hours)
         svc_mtpd.append(svc.mtpd_hours)
         svc_revenue.append(impact.revenue_lost)
-        svc_bar_colors.append(
-            "#e53935" if impact.mtpd_breached
-            else ("#fb8c00" if impact.rto_breached else "#43a047")
-        )
+        svc_bar_colors.append("#e53935") # Always red, as requested
 
     if not sys_names and not svc_names:
         fig = go.Figure()
