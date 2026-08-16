@@ -453,3 +453,13 @@ class DisasterScenarioRepository:
             import json
             data = json.loads(row["scenario_json"])
             return DisasterScenario(**data)
+
+    def list_all(self) -> list[DisasterScenario]:
+        with self.db.connection() as conn:
+            rows = conn.execute("SELECT * FROM scenarios ORDER BY name").fetchall()
+            import json
+            scenarios = []
+            for row in rows:
+                data = json.loads(row["scenario_json"])
+                scenarios.append(DisasterScenario(**data))
+            return scenarios

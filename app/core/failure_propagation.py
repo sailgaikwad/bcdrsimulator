@@ -26,6 +26,9 @@ _SOFT_PENALTY_FACTOR = 0.3
 # Threshold below which a system is considered failed enough to propagate
 _PROPAGATION_THRESHOLD = 0.5
 
+# Damage factor for DATA_SYNC dependencies (if upstream fails completely, downstream takes this much damage)
+_DATASYNC_DEGRADATION = 0.7
+
 
 class FailurePropagationEngine:
     """
@@ -86,7 +89,8 @@ class FailurePropagationEngine:
 
             if dep_type == DependencyType.DATA_SYNC.value or dep_type == DependencyType.DATA_SYNC:
                 # Sync dependency: degraded source leads to stale/unsynced replica
-                hard_factor *= (upstream_eff * weight + (1.0 - weight))
+                # Up to 70% damage based on weight
+                hard_factor *= (1.0 - (1.0 - upstream_eff) * weight * _DATASYNC_DEGRADATION)
             elif dep_type == DependencyType.HARD.value or dep_type == DependencyType.HARD:
                 # Hard dependency: multiplicative reduction
                 hard_factor *= (upstream_eff * weight + (1.0 - weight))

@@ -20,7 +20,7 @@ import random
 from typing import Optional, Any
 
 from app.models.simulation import SimulationRun, SimulationEvent, ResourcePool
-from app.models.enums import EventType, SimulationStatus, SystemStatus
+from app.models.enums import EventType, SimulationStatus, SystemStatus, ScoreCategory
 from app.models.system import SystemState
 from app.models.organization import BusinessService
 from app.graph.dependency_graph import DependencyGraph
@@ -69,9 +69,9 @@ class SimulationEngine:
         # Runtime state
         self.current_time: float = 0.0
         self.system_states: dict[str, SystemState] = {}
-        
+
         self.recovery = RecoveryEngine(run_data.id, self.rng, self.scoring, resource_pool, self.dep_graph, self.system_states)
-        
+
         # Initialize runtime state for all systems
         for sys_id in self.dep_graph.get_all_system_ids():
             sys_data = self.dep_graph.get_node_data(sys_id)
@@ -96,13 +96,13 @@ class SimulationEngine:
     ) -> None:
         """
         Trigger the initial disaster.
-        
+
         Args:
             initial_damage: {system_id: damage_amount}
             scenario_severity: 0.0 to 1.0
         """
         self.run_data.status = SimulationStatus.RUNNING
-        
+
         events = self.propagation.get_initial_failure_events(
             initial_damage,
             self.run_data.id,
@@ -120,7 +120,7 @@ class SimulationEngine:
     def step(self) -> Optional[SimulationEvent]:
         """
         Process the next event in the queue.
-        
+
         Returns the processed event, or None if the queue is empty.
         """
         event = self.events.pop()
@@ -156,7 +156,7 @@ class SimulationEngine:
             if self.run_data.status in (SimulationStatus.COMPLETED, SimulationStatus.FAILED):
                 break
             self.step()
-            
+
         if self.run_data.status == SimulationStatus.RUNNING:
             self.run_data.status = SimulationStatus.COMPLETED
             self.run_data.end_time = self.current_time
@@ -172,7 +172,7 @@ class SimulationEngine:
                 triggered = self.bia.accumulate_impact(
                     svc, impact, self.current_time, dt
                 )
-                
+
                 # If any service breaches MTPD, the whole run fails
                 if "mtpd_breached" in triggered:
                     self.run_data.status = SimulationStatus.FAILED
@@ -184,13 +184,25 @@ class SimulationEngine:
         sys_id = event.system_id
         if not sys_id:
             return
-            
+
         damage = event.payload.get("damage", 1.0)
         state = self.system_states.get(sys_id)
         if state:
             state.apply_damage(damage, self.current_time)
             state.effective_availability = self.propagation.compute_effective_availability(sys_id, self.system_states)
-            
+
+            target_name = sys_id
+            target_data = self.dep_graph.get_node_data(sys_id)
+            if target_data and "name" in target_data:
+                target_name = target_data["name"]
+
+            self.scoring.record(
+                category=ScoreCategory.BUSINESS_AVAILABILITY,
+                delta=-10.0 * damage,
+                reason=f"{target_name} suffered {damage:.0%} direct failure damage.",
+                event_time=self.current_time
+            )
+
             # Schedule downstream effects
             prop_events = self.propagation.get_downstream_propagation_events(
                 sys_id, self.run_data.id, self.current_time
@@ -203,17 +215,17 @@ class SimulationEngine:
         sys_id = event.system_id
         if not sys_id:
             return
-            
+
         state = self.system_states.get(sys_id)
         if not state:
             return
-            
+
         old_eff = state.effective_availability
         new_eff = self.propagation.compute_effective_availability(sys_id, self.system_states)
-        
+
         if abs(old_eff - new_eff) > 0.001:
             state.effective_availability = new_eff
-            
+
             # Update status
             if new_eff == 0.0:
                 if state.status != SystemStatus.FAILED:
@@ -224,20 +236,20 @@ class SimulationEngine:
             elif new_eff == 1.0:
                 if state.status != SystemStatus.OPERATIONAL:
                     state.status = SystemStatus.OPERATIONAL
-                    
+
             # Since this node changed, propagate further downstream
             prop_events = self.propagation.get_downstream_propagation_events(
                 sys_id, self.run_data.id, self.current_time
             )
             for e in prop_events:
                 self.schedule_event(e)
-                
+
             # Log the change
             target_name = sys_id
             target_data = self.dep_graph.get_node_data(sys_id)
             if target_data and "name" in target_data:
                 target_name = target_data["name"]
-                
+
             upstream_id = event.payload.get("upstream_id")
             upstream_name = upstream_id
             if upstream_id:
@@ -247,12 +259,16 @@ class SimulationEngine:
 
             if new_eff == 0.0:
                 event.description = f"{target_name} failed completely (0%) due to upstream {upstream_name} state change."
+                self.scoring.record(ScoreCategory.BUSINESS_AVAILABILITY, -5.0, event.description, self.current_time)
             elif new_eff < 1.0 and new_eff < old_eff:
                 event.description = f"{target_name} health degraded to {new_eff:.0%} due to upstream {upstream_name} degradation."
+                self.scoring.record(ScoreCategory.BUSINESS_AVAILABILITY, -2.0, event.description, self.current_time)
             elif new_eff < 1.0 and new_eff > old_eff:
                 event.description = f"{target_name} health improved to {new_eff:.0%} following upstream {upstream_name} recovery."
+                self.scoring.record(ScoreCategory.BUSINESS_AVAILABILITY, 2.0, event.description, self.current_time)
             elif new_eff == 1.0:
                 event.description = f"{target_name} fully recovered to 100% following upstream {upstream_name} recovery."
+                self.scoring.record(ScoreCategory.BUSINESS_AVAILABILITY, 5.0, event.description, self.current_time)
         else:
             event.description = f"Propagation check for {sys_id}: no change in availability."
 
@@ -266,30 +282,30 @@ class SimulationEngine:
         sys_id = event.system_id
         if not sys_id:
             return
-            
+
         plan = self.recovery.complete_recovery(sys_id, self.current_time)
         if plan:
             state = self.system_states.get(sys_id)
             if state:
                 state.apply_recovery(plan.health_restored, self.current_time)
                 state.effective_availability = self.propagation.compute_effective_availability(sys_id, self.system_states)
-                
+
                 # Recompute propagation downstream
                 prop_events = self.propagation.get_downstream_propagation_events(
                     sys_id, self.run_data.id, self.current_time
                 )
                 for e in prop_events:
                     self.schedule_event(e)
-                
+
                 # Tell BIA about technical recovery (simplification: if eff_avail >= 1.0)
                 if state.effective_availability >= 1.0:
                     for svc_id, sys_list in self.bia._service_system_map.items():
                         if sys_id in sys_list:
                             self.bia.record_technical_recovery(svc_id, self.current_time)
-                            
+
                             # Add a WRT (Work Recovery Time) delay before business recovery
                             # We'll schedule a business recovery event 2 hours later
-                            wrt_delay = 2.0 
+                            wrt_delay = 2.0
                             self.schedule_event(SimulationEvent(
                                 run_id=self.run_data.id,
                                 event_type=EventType.RECOVERY_COMPLETE,
@@ -299,7 +315,7 @@ class SimulationEngine:
                                 description=f"Business operations restored for {svc_id} (WRT complete)",
                                 payload={"business_recovery_for": svc_id}
                             ))
-                            
+
         # Handle business recovery
         svc_id = event.payload.get("business_recovery_for")
         if svc_id:

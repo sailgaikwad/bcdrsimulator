@@ -98,31 +98,39 @@ def _load_finserve_demo(db: SQLiteManager):
 
     # Recovery Strategies
     strat_restore = RecoveryStrategy(
-        id="strat-restore", name="Restore from Cold Backup", strategy_type=StrategyType.BACKUP_RESTORE,
+        id="strat-restore", name="Restore from Backup", strategy_type=StrategyType.BACKUP_RESTORE,
         optimistic_hours=4.0, likely_hours=6.0, pessimistic_hours=12.0, resource_cost=2.0, monetary_cost=5000.0
     )
     strat_failover = RecoveryStrategy(
-        id="strat-failover", name="Failover to Read Replica", strategy_type=StrategyType.FAILOVER,
+        id="strat-failover", name="Failover to Replica", strategy_type=StrategyType.FAILOVER,
         optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=1.0, monetary_cost=0.0
     )
+    strat_pitr = RecoveryStrategy(
+        id="strat-pitr", name="Point-in-Time DB Recovery", strategy_type=StrategyType.BACKUP_RESTORE,
+        optimistic_hours=6.0, likely_hours=12.0, pessimistic_hours=24.0, resource_cost=3.0, monetary_cost=15000.0
+    )
     strat_promote = RecoveryStrategy(
-        id="strat-promote", name="Promote Replica to Master", strategy_type=StrategyType.FAILOVER,
+        id="strat-promote", name="Promote Replica to Primary", strategy_type=StrategyType.FAILOVER,
         optimistic_hours=1.0, likely_hours=2.0, pessimistic_hours=3.0, resource_cost=2.0, monetary_cost=0.0
     )
     strat_restart = RecoveryStrategy(
-        id="strat-restart", name="Rolling Restart App Cluster", strategy_type=StrategyType.WORKAROUND,
+        id="strat-restart", name="Rolling App Cluster Restart", strategy_type=StrategyType.WORKAROUND,
         optimistic_hours=0.2, likely_hours=0.5, pessimistic_hours=1.0, resource_cost=1.0, monetary_cost=0.0
     )
+    strat_cache = RecoveryStrategy(
+        id="strat-cache", name="Cache Invalidation & Warm-up", strategy_type=StrategyType.WORKAROUND,
+        optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=1.0, monetary_cost=0.0
+    )
     strat_reroute = RecoveryStrategy(
-        id="strat-reroute", name="Traffic Rerouting", strategy_type=StrategyType.WORKAROUND,
+        id="strat-reroute", name="Traffic Reroute via Secondary Gateway", strategy_type=StrategyType.WORKAROUND,
         optimistic_hours=0.5, likely_hours=1.0, pessimistic_hours=2.0, resource_cost=2.0, monetary_cost=0.0
     )
-    for s in [strat_restore, strat_failover, strat_promote, strat_restart, strat_reroute]:
+    for s in [strat_restore, strat_failover, strat_pitr, strat_promote, strat_restart, strat_cache, strat_reroute]:
         strat_repo.save(s)
 
     # Scenarios
     scenario_db = DisasterScenario(
-        id="scen-db-fail-cascade", name="Database Cluster Failure", category=DisasterCategory.DATABASE_FAILURE,
+        id="scen-db-fail-cascade", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
         affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
         severity=1.0
     )
@@ -130,20 +138,29 @@ def _load_finserve_demo(db: SQLiteManager):
         id="scen-az-outage", name="Datacenter / AZ Outage", category=DisasterCategory.INFRASTRUCTURE_OUTAGE,
         affected_systems=[
             AffectedSystem(system_id="sys-igw", health_impact=1.0),
-            AffectedSystem(system_id="sys-fw", health_impact=1.0),
-            AffectedSystem(system_id="sys-db-pri", health_impact=1.0)
+            AffectedSystem(system_id="sys-fw", health_impact=0.8),
+            AffectedSystem(system_id="sys-app", health_impact=0.6)
         ],
         severity=1.0
     )
     scenario_ransomware = DisasterScenario(
-        id="scen-ransomware", name="Ransomware Storage Compromise", category=DisasterCategory.CYBER_ATTACK,
+        id="scen-ransomware", name="Ransomware Attack", category=DisasterCategory.CYBER_ATTACK,
         affected_systems=[
             AffectedSystem(system_id="sys-db-pri", health_impact=1.0),
-            AffectedSystem(system_id="sys-backup", health_impact=0.8)
+            AffectedSystem(system_id="sys-backup", health_impact=0.9),
+            AffectedSystem(system_id="sys-db-rep", health_impact=0.7)
         ],
         severity=1.0
     )
-    for s in [scenario_db, scenario_az, scenario_ransomware]:
+    scenario_app_crash = DisasterScenario(
+        id="scen-app-crash", name="Application Cluster Crash", category=DisasterCategory.SERVER_FAILURE,
+        affected_systems=[
+            AffectedSystem(system_id="sys-app", health_impact=1.0),
+            AffectedSystem(system_id="sys-cache", health_impact=0.8)
+        ],
+        severity=0.8
+    )
+    for s in [scenario_db, scenario_az, scenario_ransomware, scenario_app_crash]:
         scenario_repo.save(s)
 
 
@@ -173,14 +190,17 @@ def _init_simulation_engine():
         graph.add_dependency(dep)
 
     # Currently active scenario
-    scenario = DisasterScenarioRepository(db).get("scen-db-fail-cascade")
-    if not scenario:
-        # Fallback if somehow not loaded (should not happen if loaded correctly)
-        scenario = DisasterScenario(
-            id="scen-db-fail-cascade", name="Database Cluster Failure", category=DisasterCategory.DATABASE_FAILURE,
-            affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
-            severity=1.0
-        )
+    if "active_scenario" in st.session_state:
+        scenario = st.session_state["active_scenario"]
+    else:
+        scenario = DisasterScenarioRepository(db).get("scen-db-fail-cascade")
+        if not scenario:
+            # Fallback if somehow not loaded (should not happen if loaded correctly)
+            scenario = DisasterScenario(
+                id="scen-db-fail-cascade", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
+                affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
+                severity=1.0
+            )
     
     run_data = SimulationRun(org_id=org.id, scenario_id=scenario.id, rng_seed=42)
     pool = ResourcePool(team_capacity=5, budget_remaining=50000.0)

@@ -85,6 +85,7 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
     node_y = []
     node_colors = []
     node_texts = []
+    node_display_texts = []
     
 
     
@@ -117,13 +118,14 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
             
         node_colors.append(color)
         node_texts.append(f"{name}<br>State: {status_text}")
+        node_display_texts.append(f"{name}<br><span style='font-size:10px'>{avail*100:.0f}%</span>")
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode='markers+text',
         hoverinfo='text',
         hovertext=node_texts,
-        text=[sys_repo.get(n).name if sys_repo.get(n) else n for n in G.nodes()],
+        text=node_display_texts,
         textposition="bottom center",
         marker=dict(
             showscale=False,
@@ -140,7 +142,20 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                annotations=[dict(
+                    x=0.0,
+                    y=1.0,
+                    xref='paper',
+                    yref='paper',
+                    text='<b>Legend</b><br>🟢 Healthy (100%)<br>🔵 Recovering<br>🟠 Degraded<br>🔴 Failed (0%)<br>--- Hard Edge<br>- - Sync Edge<br>··· Disrupted Edge',
+                    showarrow=False,
+                    align='left',
+                    bgcolor='rgba(255,255,255,0.8)',
+                    bordercolor='black',
+                    borderwidth=1
+                )]
              )
+    )
              
     return fig
