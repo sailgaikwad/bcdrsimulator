@@ -45,6 +45,10 @@ def render_sidebar():
     return page
 
 def main():
+    # Inject global styles
+    from app.ui import styles
+    styles.inject_custom_css()
+
     # Ensure database and simulation engines are loaded into session state
     state_manager.init_session_state()
 

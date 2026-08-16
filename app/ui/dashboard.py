@@ -17,7 +17,8 @@ def render():
     
     # Overview
     with col1:
-        st.subheader("Overview")
+        with st.container(border=True):
+            st.subheader("Overview")
         st.write(f"**Organization:** {engine.run_data.org_id}")
         st.write(f"**Status:** {engine.run_data.status.value.upper()}")
         if scenario:
@@ -25,7 +26,8 @@ def render():
             
     # Resilience & Severity
     with col2:
-        st.subheader("Metrics")
+        with st.container(border=True):
+            st.subheader("Metrics")
         score = engine.scoring.get_composite_score()
         st.metric("Resilience Score", f"{score:.1f}/100")
         if scenario:
@@ -33,12 +35,13 @@ def render():
             
     # Business State
     with col3:
-        st.subheader("Business State")
-        is_failed = engine.run_data.status == SimulationStatus.FAILED
-        state_color = "red" if is_failed else "green"
-        state_text = "FAILED (MTPD Breached)" if is_failed else "OPERATIONAL"
-        st.markdown(f"**Current State:** <span style='color:{state_color}; font-weight:bold;'>{state_text}</span>", unsafe_allow_html=True)
-        st.write(f"**Simulation Time:** {engine.current_time:.2f} hours")
+        with st.container(border=True):
+            st.subheader("Business State")
+            is_failed = engine.run_data.status == SimulationStatus.FAILED
+            state_color = "var(--danger)" if is_failed else "var(--success)"
+            state_text = "FAILED (MTPD Breached)" if is_failed else "OPERATIONAL"
+            st.markdown(f"<div style='font-size: 1.5rem; font-weight: 700; color: {state_color}; margin-bottom: 1rem;'>{state_text}</div>", unsafe_allow_html=True)
+            st.write(f"**Simulation Time:** {engine.current_time:.2f} hours")
 
     st.markdown("---")
     
@@ -64,19 +67,34 @@ def render():
             })
             
     if services_data:
-        st.dataframe(services_data, use_container_width=True)
+        import pandas as pd
+        df = pd.DataFrame(services_data)
+        
+        def highlight_status(val):
+            if val == "BREACHED":
+                return "color: white; background-color: #f43f5e; font-weight: bold;"
+            elif val == "OK":
+                return "color: white; background-color: #10b981; font-weight: bold;"
+            return ""
+            
+        styled_df = df.style.map(highlight_status, subset=["RTO Status", "MTPD Status"])
+        
+        with st.container(border=True):
+            st.dataframe(styled_df, use_container_width=True)
         
         st.subheader("RTO & MTPD Visualization")
-        fig_rto = charts.generate_rto_comparison(engine)
-        st.plotly_chart(fig_rto, use_container_width=True, key=f"rto_chart_{len(engine.processed_events)}")
+        with st.container(border=True):
+            fig_rto = charts.generate_rto_comparison(engine)
+            st.plotly_chart(fig_rto, use_container_width=True, key=f"rto_chart_{len(engine.processed_events)}")
     else:
-        st.write("No services affected yet.")
+        st.info("No services affected yet.")
         
     st.markdown("---")
     
     st.subheader("Score Timeline")
-    fig_score = charts.generate_score_timeline(engine)
-    st.plotly_chart(fig_score, use_container_width=True, key=f"score_chart_{len(engine.processed_events)}")
+    with st.container(border=True):
+        fig_score = charts.generate_score_timeline(engine)
+        st.plotly_chart(fig_score, use_container_width=True, key=f"score_chart_{len(engine.processed_events)}")
 
     st.markdown("---")
     
@@ -91,20 +109,23 @@ def render():
                     "System ID": sys_id,
                     "Availability": f"{state.effective_availability * 100:.1f}%"
                 })
-        if affected:
-            st.dataframe(affected, use_container_width=True)
-        else:
-            st.write("All systems healthy.")
+        with st.container(border=True):
+            if affected:
+                st.dataframe(affected, use_container_width=True)
+            else:
+                st.info("All systems healthy.")
             
     with col_spof:
         st.subheader("Recommendations & SPOF")
-        # In a full implementation, we'd query GraphAnalysis for articulation points.
-        # For Milestone 2, we can just list the known SPOFs from the demo graph.
-        st.info("💡 **Recommendation**: Primary Database is a Single Point of Failure (SPOF) for Payment Processing. Implement automated failover to the Read Replica.")
-        st.info("💡 **Recommendation**: Increase backup frequency to reduce potential RPO breaches.")
+        with st.container(border=True):
+            # In a full implementation, we'd query GraphAnalysis for articulation points.
+            # For Milestone 2, we can just list the known SPOFs from the demo graph.
+            st.info("💡 **Recommendation**: Primary Database is a Single Point of Failure (SPOF) for Payment Processing. Implement automated failover to the Read Replica.")
+            st.info("💡 **Recommendation**: Increase backup frequency to reduce potential RPO breaches.")
         
     st.markdown("---")
     st.subheader("Impact Flow Diagram")
-    st.markdown("Visualizing the technical failure cascading to service degradation and ultimate business outcome.")
-    fig_flow = charts.generate_impact_flow(engine)
-    st.plotly_chart(fig_flow, use_container_width=True, key=f"impact_flow_{len(engine.processed_events)}")
+    st.markdown("<p style='color: var(--text-muted);'>Visualizing the technical failure cascading to service degradation and ultimate business outcome.</p>", unsafe_allow_html=True)
+    with st.container(border=True):
+        fig_flow = charts.generate_impact_flow(engine)
+        st.plotly_chart(fig_flow, use_container_width=True, key=f"impact_flow_{len(engine.processed_events)}")

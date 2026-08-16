@@ -6,6 +6,7 @@ from app.database.repositories import SimulationRunRepository
 
 def render():
     st.header("Historical Runs")
+    st.markdown("<p style='color: var(--text-muted);'>Review completed simulations, including final state and full event ledgers.</p>", unsafe_allow_html=True)
     
     if "db" not in st.session_state:
         st.warning("Database not initialized.")
@@ -20,7 +21,8 @@ def render():
         st.info("No historical runs found. Run a simulation and click 'Save Run' in the Simulation tab.")
         return
         
-    st.markdown("Select a historical run to view its final state and score ledger.")
+    with st.container(border=True):
+        st.markdown("Select a historical run to view its final state and score ledger.")
     
     # Format runs for selection
     run_options = {
@@ -32,14 +34,17 @@ def render():
     selected_run = run_options[selected_name]
     
     st.markdown("---")
-    st.subheader(f"Run Details: {selected_run.id}")
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Final Resilience Score", f"{selected_run.final_resilience_score:.1f}" if selected_run.final_resilience_score else "N/A")
-    col2.metric("Total Downtime", f"{selected_run.total_downtime_hours:.2f}h" if selected_run.total_downtime_hours else "N/A")
-    col3.metric("Final Status", selected_run.status.value.upper())
+    with st.container(border=True):
+        st.subheader(f"Run Details: {selected_run.id}")
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Final Resilience Score", f"{selected_run.final_resilience_score:.1f}" if selected_run.final_resilience_score else "N/A")
+        col2.metric("Total Downtime", f"{selected_run.total_downtime_hours:.2f}h" if selected_run.total_downtime_hours else "N/A")
+        col3.metric("Final Status", selected_run.status.value.upper())
     
-    tab1, tab2 = st.tabs(["Event Ledger", "Final Service Impacts"])
+    with st.container(border=True):
+        tab1, tab2 = st.tabs(["Event Ledger", "Final Service Impacts"])
     
     with tab1:
         if selected_run.event_ledger_json:

@@ -6,6 +6,7 @@ from app.ui.state_manager import reset_simulation
 
 def render():
     st.header("Disaster Scenarios")
+    st.markdown("<p style='color: var(--text-muted);'>Select and configure the active disaster scenario for the simulation.</p>", unsafe_allow_html=True)
 
     db = st.session_state.get("db")
     if not db:
@@ -19,38 +20,41 @@ def render():
         st.warning("No scenarios available.")
         return
 
-    st.subheader("Available Scenarios")
-
-    options = {s.name: s for s in scenarios}
-
-    current_scenario = st.session_state.get("active_scenario")
-    current_index = 0
-    if current_scenario:
-        for i, s in enumerate(scenarios):
-            if s.id == current_scenario.id:
-                current_index = i
-                break
-
-    selected_name = st.selectbox("Select Scenario to Review", list(options.keys()), index=current_index)
-    selected_scenario: DisasterScenario = options[selected_name]
-
-    if not current_scenario or current_scenario.id != selected_scenario.id:
-        st.session_state["active_scenario"] = selected_scenario
-        reset_simulation()
+    with st.container(border=True):
+        st.subheader("Available Scenarios")
+    
+        options = {s.name: s for s in scenarios}
+    
+        current_scenario = st.session_state.get("active_scenario")
+        current_index = 0
+        if current_scenario:
+            for i, s in enumerate(scenarios):
+                if s.id == current_scenario.id:
+                    current_index = i
+                    break
+    
+        selected_name = st.selectbox("Select Scenario to Review", list(options.keys()), index=current_index)
+        selected_scenario: DisasterScenario = options[selected_name]
+    
+        if not current_scenario or current_scenario.id != selected_scenario.id:
+            st.session_state["active_scenario"] = selected_scenario
+            reset_simulation()
 
     st.markdown("---")
-    st.subheader(f"Scenario Details: {selected_scenario.name}")
-    st.write(f"**Category:** {selected_scenario.category.value}")
-    st.write(f"**Base Severity:** {selected_scenario.severity}")
-
-    st.write("**Affected Systems:**")
-    affected_data = []
-    for a in selected_scenario.affected_systems:
-        affected_data.append({
-            "System ID": a.system_id,
-            "Health Impact": f"{a.health_impact * 100}%",
-            "Delay (hrs)": a.delay_hours
-        })
-    st.table(affected_data)
-
-    st.info("Head to the **Simulation** tab to trigger this scenario and watch the cascade.")
+    with st.container(border=True):
+        st.subheader(f"Scenario Details: {selected_scenario.name}")
+        st.write(f"**Category:** {selected_scenario.category.value}")
+        st.write(f"**Base Severity:** {selected_scenario.severity}")
+    
+        st.write("**Affected Systems:**")
+        affected_data = []
+        for a in selected_scenario.affected_systems:
+            affected_data.append({
+                "System ID": a.system_id,
+                "Health Impact": f"{a.health_impact * 100}%",
+                "Delay (hrs)": a.delay_hours
+            })
+        import pandas as pd
+        st.dataframe(pd.DataFrame(affected_data), use_container_width=True)
+    
+        st.info("Head to the **Simulation** tab to trigger this scenario and watch the cascade.")

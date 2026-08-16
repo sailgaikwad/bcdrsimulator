@@ -4,16 +4,9 @@ from app.models.recovery import RecoveryStrategy
 from app.models.enums import DependencyType
 
 def render():
-    st.header("Recovery Planning & Execution")
-    
-    if "engine" not in st.session_state:
-        st.warning("Engine not initialized.")
-        return
-        
     engine: SimulationEngine = st.session_state["engine"]
-    strategies = st.session_state.get("recovery_strategies", [])
-    
-    st.markdown("Select a degraded/failed system and initiate a recovery strategy.")
+    st.header("Recovery Planning & Execution")
+    st.markdown("<p style='color: var(--text-muted);'>Select a degraded/failed system and initiate a recovery strategy.</p>", unsafe_allow_html=True)
     
     # Filter for systems that actually need recovery
     failed_systems = [
@@ -40,21 +33,23 @@ def render():
         st.error(f"Recovery of {target_sys} is blocked. Critical upstream dependencies must be recovered first: {', '.join(blocked_by)}")
     
     # Display Strategies
-    st.subheader("Available Strategies")
-    
-    if not strategies:
-        st.info("No recovery strategies found.")
-        return
+    with st.container(border=True):
+        st.subheader("Available Strategies")
         
-    strat_names = [s.name for s in strategies]
-    selected_name = st.selectbox("Select Strategy", strat_names)
-    selected_strat: RecoveryStrategy = next(s for s in strategies if s.name == selected_name)
-    
-    # Strategy Details
-    st.write(f"**Type:** {selected_strat.strategy_type.value}")
-    st.write(f"**Estimated Duration (Pessimistic):** {selected_strat.pessimistic_hours} hours")
-    st.write(f"**Resource Cost (Team):** {selected_strat.resource_cost}")
-    st.write(f"**Monetary Cost:** INR {selected_strat.monetary_cost:,.2f}")
+        strategies = st.session_state.get("recovery_strategies", [])
+        if not strategies:
+            st.info("No recovery strategies found.")
+            return
+            
+        strat_names = [s.name for s in strategies]
+        selected_name = st.selectbox("Select Strategy", strat_names)
+        selected_strat: RecoveryStrategy = next(s for s in strategies if s.name == selected_name)
+        
+        # Strategy Details
+        st.write(f"**Type:** {selected_strat.strategy_type.value}")
+        st.write(f"**Estimated Duration (Pessimistic):** {selected_strat.pessimistic_hours} hours")
+        st.write(f"**Resource Cost (Team):** {selected_strat.resource_cost}")
+        st.write(f"**Monetary Cost:** INR {selected_strat.monetary_cost:,.2f}")
     
     st.markdown("---")
     
@@ -76,6 +71,10 @@ def render():
                 st.error("Recovery plan rejected! (Resource constraints exceeded)")
             
     st.markdown("---")
-    st.subheader("Current Resource Pool")
-    st.write(f"**Available Team Capacity:** {engine.recovery.resource_pool.team_capacity}")
-    st.write(f"**Budget Remaining:** INR {engine.recovery.resource_pool.budget_remaining:,.2f}")
+    with st.container(border=True):
+        st.subheader("Current Resource Pool")
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            st.metric("Available Team Capacity", f"{engine.recovery.resource_pool.team_capacity}")
+        with rc2:
+            st.metric("Budget Remaining", f"INR {engine.recovery.resource_pool.budget_remaining:,.2f}")

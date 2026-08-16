@@ -4,7 +4,7 @@ from app.models.recovery import RecoveryStrategy
 
 def render():
     st.header("Recovery Strategy Comparison")
-    
+    st.markdown("<p style='color: var(--text-muted);'>Compare projected outcomes of different recovery strategies.</p>", unsafe_allow_html=True)
     if "engine" not in st.session_state:
         st.warning("Engine not initialized.")
         return
@@ -27,9 +27,8 @@ def render():
         st.success("All systems are currently healthy. Trigger a disaster to run a comparison.")
         return
         
-    target_sys = st.selectbox("Select Target Failed System", failed_systems)
-    
-    st.markdown("---")
+    with st.container(border=True):
+        target_sys = st.selectbox("Select Target Failed System", failed_systems)
     
     comparison_data = []
     
@@ -56,7 +55,9 @@ def render():
             "Data Loss (RPO Impact)": f"{strat.data_loss_hours}h"
         })
         
-    st.subheader("Strategy Profiles & Sampling")
-    st.table(comparison_data)
-    
+    with st.container(border=True):
+        st.subheader("Strategy Profiles & Sampling")
+        import pandas as pd
+        st.dataframe(pd.DataFrame(comparison_data), use_container_width=True)
+        
     st.info("The 'Sampled Duration' is a deterministic projection of the actual time it will take if you initiate this strategy now, based on the simulation RNG seed.")

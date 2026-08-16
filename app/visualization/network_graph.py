@@ -62,21 +62,21 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=1.5, color='#888'),
+        line=dict(width=1.5, color='#94a3b8'),
         hoverinfo='none',
         mode='lines'
     )
     
     edge_dash_trace = go.Scatter(
         x=edge_dash_x, y=edge_dash_y,
-        line=dict(width=1.5, color='#aaa', dash='dash'),
+        line=dict(width=1.5, color='#cbd5e1', dash='dash'),
         hoverinfo='none',
         mode='lines'
     )
 
     edge_disrupted_trace = go.Scatter(
         x=edge_disrupted_x, y=edge_disrupted_y,
-        line=dict(width=2.0, color='red', dash='dot'),
+        line=dict(width=2.0, color='#f43f5e', dash='dot'),
         hoverinfo='none',
         mode='lines'
     )
@@ -101,16 +101,16 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
         
         # Colors: Blue=Recovering, Green=1.0, Yellow=0.1-0.99, Red=0.0
         if is_recovering:
-            color = 'blue'
+            color = '#0ea5e9'
             status_text = "Recovering"
         elif avail >= 1.0:
-            color = 'green'
+            color = '#10b981'
             status_text = "Healthy"
         elif avail <= 0.0:
-            color = 'red'
+            color = '#f43f5e'
             status_text = "Failed"
         else:
-            color = 'orange'
+            color = '#f59e0b'
             status_text = f"Degraded ({avail*100:.0f}%)"
             
         sys_obj = sys_repo.get(node)
@@ -138,6 +138,7 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
     fig = go.Figure(data=[edge_trace, edge_dash_trace, edge_disrupted_trace, node_trace],
              layout=go.Layout(
                 title=dict(text='<br>System Dependency Graph', font=dict(size=16)),
+                font=dict(family="Inter, sans-serif"),
                 showlegend=False,
                 hovermode='closest',
                 margin=dict(b=20,l=5,r=5,t=40),
@@ -148,11 +149,13 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
                     y=1.0,
                     xref='paper',
                     yref='paper',
-                    text='<b>Legend</b><br>🟢 Healthy (100%)<br>🔵 Recovering<br>🟠 Degraded<br>🔴 Failed (0%)<br>─── Hard Edge<br>- - Sync Edge<br>··· Disrupted Edge',
+                    text='<b>Legend</b><br><span style="color:#10b981">●</span> Healthy (100%)<br><span style="color:#0ea5e9">●</span> Recovering<br><span style="color:#f59e0b">●</span> Degraded<br><span style="color:#f43f5e">●</span> Failed (0%)<br><span style="color:#94a3b8">───</span> Hard Edge<br><span style="color:#cbd5e1">- -</span> Sync Edge<br><span style="color:#f43f5e">···</span> Disrupted Edge',
                     showarrow=False,
                     align='left',
-                    bgcolor='rgba(0,0,0,0)',
-                    borderwidth=0
+                    bgcolor='rgba(255,255,255,0.8)',
+                    borderwidth=1,
+                    bordercolor='#e2e8f0',
+                    borderpad=8
                 )]
              )
     )

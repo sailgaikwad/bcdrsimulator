@@ -30,7 +30,7 @@ def test_dependency_graph_rendering_states():
     # Test E: Reset simulation -> graph returns to initial healthy state
     fig = generate_plotly_graph(engine, db)
     colors = fig.data[-1].marker.color
-    assert all(c == 'green' for c in colors), "Graph should initially be completely green"
+    assert all(c == '#10b981' for c in colors), "Graph should initially be completely green"
 
     # Test A: Trigger disaster
     engine.trigger_disaster({"sys-db-pri": 1.0})
@@ -44,8 +44,8 @@ def test_dependency_graph_rendering_states():
                 return c
         return None
 
-    assert get_color("sys-db-pri") == 'red', "Primary DB should be red after disaster"
-    assert get_color("sys-app") == 'green', "App cluster should be green before propagation"
+    assert get_color("sys-db-pri") == '#f43f5e', "Primary DB should be red after disaster"
+    assert get_color("sys-app") == '#10b981', "App cluster should be green before propagation"
 
     # Test B: Process next propagation event
     engine.step()  # Should be the propagation to sys-app
@@ -53,7 +53,7 @@ def test_dependency_graph_rendering_states():
     colors = fig.data[-1].marker.color
     texts = fig.data[-1].text
 
-    assert get_color("sys-app") == 'red', "App cluster should be red after propagation"
+    assert get_color("sys-app") == '#f43f5e', "App cluster should be red after propagation"
 
     # Test D: Initiate recovery -> process -> reflects states
     strat = RecoveryStrategy(name="Strat", strategy_type=StrategyType.FAILOVER, optimistic_hours=1, likely_hours=1, pessimistic_hours=1, resource_cost=1, monetary_cost=0)
@@ -71,8 +71,8 @@ def test_dependency_graph_rendering_states():
     colors = fig.data[-1].marker.color
     texts = fig.data[-1].text
 
-    assert get_color("sys-db-pri") == 'green', "Primary DB should be green after recovery"
-    assert get_color("sys-app") == 'green', "App cluster should be green after recovery propagation"
+    assert get_color("sys-db-pri") == '#10b981', "Primary DB should be green after recovery"
+    assert get_color("sys-app") == '#10b981', "App cluster should be green after recovery propagation"
 
 def test_datacenter_outage_propagation():
     db = SQLiteManager(":memory:")

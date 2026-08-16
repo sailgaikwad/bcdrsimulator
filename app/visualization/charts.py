@@ -49,7 +49,7 @@ def generate_score_timeline(engine: SimulationEngine) -> go.Figure:
     fig.add_hline(
         y=final_score,
         line_dash="dot",
-        line_color="cyan",
+        line_color="#4f46e5",
         annotation_text=f"Current: {final_score:.1f}",
         annotation_position="bottom right",
     )
@@ -57,6 +57,11 @@ def generate_score_timeline(engine: SimulationEngine) -> go.Figure:
         xaxis_title="Simulation Time (Hours)",
         yaxis_title="Score",
         yaxis_range=[0, 100],
+        font=dict(family="Inter, sans-serif"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(gridcolor="rgba(0,0,0,0.05)"),
+        yaxis=dict(gridcolor="rgba(0,0,0,0.05)")
     )
     return fig
 
@@ -80,15 +85,19 @@ def generate_rto_comparison(engine: SimulationEngine) -> go.Figure:
         return go.Figure()
 
     fig = go.Figure(data=[
-        go.Bar(name='Target RTO', x=services, y=rto, marker_color='green'),
-        go.Bar(name='MTPD (Max)', x=services, y=mtpd, marker_color='orange'),
-        go.Bar(name='Actual Downtime', x=services, y=actual, marker_color='red')
+        go.Bar(name='Target RTO', x=services, y=rto, marker_color='#10b981'),
+        go.Bar(name='MTPD (Max)', x=services, y=mtpd, marker_color='#f59e0b'),
+        go.Bar(name='Actual Downtime', x=services, y=actual, marker_color='#f43f5e')
     ])
     
     fig.update_layout(
         barmode='group',
         title="RTO and MTPD vs Actual Downtime",
-        yaxis_title="Hours"
+        yaxis_title="Hours",
+        font=dict(family="Inter, sans-serif"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        yaxis=dict(gridcolor="rgba(0,0,0,0.05)")
     )
     return fig
 
@@ -121,7 +130,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         sys_names.append(name)
         health_lost_pct.append(round(loss, 1))
 
-        sys_colors.append("#fb8c00")  # Always orange, as requested
+        sys_colors.append("#f59e0b")  # Amber
 
     # ── Gather service business impact data ───────────────────────────────────
     svc_names = []
@@ -140,7 +149,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         svc_rto.append(svc.rto_hours)
         svc_mtpd.append(svc.mtpd_hours)
         svc_revenue.append(impact.revenue_lost)
-        svc_bar_colors.append("#e53935") # Always red, as requested
+        svc_bar_colors.append("#f43f5e") # Rose
 
     if not sys_names and not svc_names:
         fig = go.Figure()
@@ -197,7 +206,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         )
         fig.update_xaxes(
             range=[0, 100], ticksuffix="%",
-            gridcolor="rgba(255,255,255,0.08)",
+            gridcolor="rgba(0,0,0,0.05)",
             row=current_row, col=1,
         )
         fig.update_yaxes(gridcolor="rgba(0,0,0,0)", row=current_row, col=1)
@@ -210,7 +219,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
                 name="RTO Target",
                 x=svc_names,
                 y=svc_rto,
-                marker_color="#43a047",
+                marker_color="#10b981",
                 opacity=0.85,
                 hovertemplate="<b>%{x}</b><br>RTO target: %{y:.1f}h<extra></extra>",
             ),
@@ -221,7 +230,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
                 name="MTPD Limit",
                 x=svc_names,
                 y=svc_mtpd,
-                marker_color="#CF9FFF",
+                marker_color="#8b5cf6",
                 opacity=0.85,
                 hovertemplate="<b>%{x}</b><br>MTPD limit: %{y:.1f}h<extra></extra>",
             ),
@@ -249,7 +258,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         )
         fig.update_yaxes(
             title_text="Hours",
-            gridcolor="rgba(255,255,255,0.08)",
+            gridcolor="rgba(0,0,0,0.05)",
             row=current_row, col=1,
         )
         fig.update_xaxes(gridcolor="rgba(0,0,0,0)", row=current_row, col=1)
@@ -259,7 +268,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         title=dict(text="Infrastructure → Service Impact Analysis", font=dict(size=15)),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#e0e0e0"),
+        font=dict(color="#1e293b", family="Inter, sans-serif"),
         # Legend anchored top-right — never overlaps bars regardless of chart width
         legend=dict(
             orientation="h",
@@ -305,10 +314,10 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         recovery_starts[sys_id] = plan.start_time or plan.decision_time or 0.0
 
     # Colour palette
-    COLOR_FAILED     = "#e53935"  # red
-    COLOR_RECOVERING = "#1e88e5"  # blue
-    COLOR_RESTORED   = "#43a047"  # green
-    COLOR_DEGRADED   = "#fb8c00"  # orange
+    COLOR_FAILED     = "#f43f5e"  # Rose
+    COLOR_RECOVERING = "#0ea5e9"  # Sky
+    COLOR_RESTORED   = "#10b981"  # Emerald
+    COLOR_DEGRADED   = "#f59e0b"  # Amber
 
     current_t = engine.current_time if engine.current_time > 0 else 0.001
 
@@ -420,7 +429,7 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
             base=d["base"],
             marker=dict(
                 color=phase_colors[ph],
-                line=dict(width=0.5, color="rgba(255,255,255,0.15)"),
+                line=dict(width=0.5, color="rgba(0,0,0,0.05)"),
             ),
             hovertemplate=d["hover"],
             showlegend=show_legend,
@@ -431,10 +440,10 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         fig.add_vline(
             x=current_t,
             line_dash="dash",
-            line_color="rgba(255,255,255,0.5)",
+            line_color="#1e293b",
             annotation_text=f"Now ({current_t:.2f}h)",
             annotation_position="top right",
-            annotation_font_color="rgba(255,255,255,0.7)",
+            annotation_font_color="#1e293b",
         )
 
     fig.update_layout(
@@ -442,7 +451,7 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         title=dict(text="Simulation Timeline — System Phase History", font=dict(size=15)),
         xaxis=dict(
             title="Simulation Time (hours)",
-            gridcolor="rgba(255,255,255,0.08)",
+            gridcolor="rgba(0,0,0,0.05)",
             zeroline=False,
             ticksuffix="h",
         ),
@@ -452,7 +461,7 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#e0e0e0"),
+        font=dict(color="#1e293b", family="Inter, sans-serif"),
         legend=dict(
             orientation="h",
             yanchor="bottom",

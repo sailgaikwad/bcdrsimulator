@@ -2,6 +2,7 @@ import streamlit as st
 
 def render():
     st.header("Business Impact Analysis (BIA)")
+    st.markdown("<p style='color: var(--text-muted);'>View Business Services and their corresponding Recovery Time Objectives (RTO).</p>", unsafe_allow_html=True)
     
     st.markdown("""
     This page tracks the financial and operational impact of downtime on the organization's business services.
@@ -20,23 +21,32 @@ def render():
         
     engine = st.session_state["engine"]
     
-    st.subheader("Current Business Impact Status")
-    
-    bia_data = []
-    for svc in engine.services:
-        impact = engine.bia.get_impact(svc.id)
-        if impact:
-            mtpd_breached = "YES" if impact.mtpd_breached else "NO"
-            bia_data.append({
-                "Service": svc.name,
-                "Current Downtime": f"{impact.downtime_hours:.2f}h",
-                "Target RTO": f"{svc.rto_hours}h",
-                "Target MTPD": f"{svc.mtpd_hours}h",
-                "Revenue Lost": f"INR {impact.revenue_lost:,.2f}",
-                "MTPD Breached": mtpd_breached
-            })
-            
-    if bia_data:
-        st.dataframe(bia_data, use_container_width=True)
-    else:
-        st.info("No services have registered downtime yet. Trigger the disaster to begin tracking impact.")
+    with st.container(border=True):
+        st.subheader("Current Business Impact Status")
+        
+        bia_data = []
+        for svc in engine.services:
+            impact = engine.bia.get_impact(svc.id)
+            if impact:
+                mtpd_breached = "YES" if impact.mtpd_breached else "NO"
+                bia_data.append({
+                    "Service": svc.name,
+                    "Current Downtime": f"{impact.downtime_hours:.2f}h",
+                    "Target RTO": f"{svc.rto_hours}h",
+                    "Target MTPD": f"{svc.mtpd_hours}h",
+                    "Revenue Lost": f"INR {impact.revenue_lost:,.2f}",
+                    "MTPD Breached": mtpd_breached
+                })
+                
+        if bia_data:
+            import pandas as pd
+            df = pd.DataFrame(bia_data)
+            st.dataframe(
+                df.style.map(
+                    lambda x: 'background-color: #ffcccc' if x == "YES" else '', 
+                    subset=['MTPD Breached']
+                ), 
+                use_container_width=True
+            )
+        else:
+            st.info("No services have registered downtime yet. Trigger the disaster to begin tracking impact.")

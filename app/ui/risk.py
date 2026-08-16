@@ -1,7 +1,8 @@
 import streamlit as st
 
 def render():
-    st.header("Risk Analysis")
+    st.header("Risk Register")
+    st.markdown("<p style='color: var(--text-muted);'>View and analyze organizational risks and their mitigations.</p>", unsafe_allow_html=True)
     
     st.markdown("""
     This module performs quantitative risk evaluation using the `P × I × E` model:
@@ -18,30 +19,25 @@ def render():
         return
         
     engine = st.session_state["engine"]
+    risks = getattr(engine, "risks", [])
     
-    st.subheader("High Level Risk Exposure (Mock Data for M1)")
-    
-    # Simple risk table based on services
-    risk_data = []
-    for svc in engine.services:
-        # Fictional static risk params for the demo
-        prob = 0.05
-        impact = svc.revenue_per_hour * svc.mtpd_hours
-        exposure = svc.criticality / 10.0
-        
-        score = prob * impact * exposure
-        
-        category = "CRITICAL" if score > 5000 else "HIGH" if score > 1000 else "MEDIUM"
-        
-        risk_data.append({
-            "Risk Source": svc.name,
-            "Probability": f"{prob*100:.1f}%",
-            "Impact (Max Loss)": f"INR {impact:,.2f}",
-            "Exposure": f"{exposure*100:.1f}%",
-            "P×I×E Score": f"{score:,.2f}",
-            "Category": category
-        })
-        
-    st.dataframe(risk_data, use_container_width=True)
+    with st.container(border=True):
+        st.subheader("Active Risks")
+        if not risks:
+            st.info("No risks registered.")
+        else:
+            risk_data = []
+            for r in risks:
+                risk_data.append({
+                    "Risk ID": r.id,
+                    "Description": r.description,
+                    "Likelihood": r.likelihood.value,
+                    "Impact": r.impact.value,
+                    "Score": f"{r.get_risk_score():.1f}",
+                    "Status": r.status.value
+                })
+                
+            import pandas as pd
+            st.dataframe(pd.DataFrame(risk_data), use_container_width=True)
     
     st.info("The Risk Engine continuously monitors the architecture graph for Single Points of Failure (SPOF) to recalculate Exposure automatically.")
