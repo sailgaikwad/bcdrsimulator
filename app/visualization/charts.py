@@ -242,12 +242,16 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
                 y=svc_downtime,
                 marker_color=svc_bar_colors,
                 text=[f"₹{r:,.0f} lost" for r in svc_revenue],
-                textposition="outside",
+                textposition="auto",          # inside when bar is tall enough, hidden when too small
+                constraintext="both",          # never overflow outside the bar or plot
+                insidetextanchor="middle",
+                textfont=dict(size=10, color="white"),
                 hovertemplate=(
                     "<b>%{x}</b><br>"
                     "Downtime: %{y:.2f}h<br>"
-                    "Revenue lost: ₹%{text}<extra></extra>"
+                    "Revenue lost: ₹%{customdata:,.0f}<extra></extra>"
                 ),
+                customdata=svc_revenue,
             ),
             row=current_row, col=1,
         )
@@ -264,27 +268,23 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#e0e0e0"),
+        # Legend anchored top-right — never overlaps bars regardless of chart width
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.25,
-            xanchor="center",
-            x=0.5,
+            y=1.02,
+            xanchor="right",
+            x=1.0,
             bgcolor="rgba(0,0,0,0)",
+            font=dict(size=11),
         ),
-        margin=dict(t=70, b=80, l=10, r=10),
+        margin=dict(t=80, b=30, l=10, r=10),
         height=520 if rows == 2 else 300,
-        annotations=[
-            dict(
-                text="🔴 MTPD Breached  🟠 RTO Breached  🟢 Within Target",
-                xref="paper", yref="paper",
-                x=0.5, y=-0.18, showarrow=False,
-                font=dict(size=11, color="#aaaaaa"),
-                xanchor="center",
-            )
-        ] if has_svc else [],
+        # No bottom annotation — breach status is already encoded in bar colour
+        # and described in the legend entries themselves via hovertext
     )
     return fig
+
 
 
 def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
