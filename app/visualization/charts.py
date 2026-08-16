@@ -221,7 +221,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
                 name="MTPD Limit",
                 x=svc_names,
                 y=svc_mtpd,
-                marker_color="#fb8c00",
+                marker_color="#CF9FFF",
                 opacity=0.85,
                 hovertemplate="<b>%{x}</b><br>MTPD limit: %{y:.1f}h<extra></extra>",
             ),
