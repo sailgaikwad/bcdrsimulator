@@ -72,13 +72,14 @@ def inject_custom_css():
         }
         
         /* Hide the actual radio circle completely - use aggressive selectors */
-        div[role="radiogroup"] label > div:first-child:not(:last-child),
-        div[role="radiogroup"] label div[data-baseweb="radio"],
-        div[role="radiogroup"] input[type="radio"] {
+        div[role="radiogroup"] label > *:not(:has(p)),
+        div[role="radiogroup"] label[data-baseweb="radio"] > div:first-of-type,
+        div[role="radiogroup"] label[data-baseweb="radio"] > input + div {
             display: none !important;
             width: 0 !important;
             height: 0 !important;
             opacity: 0 !important;
+            visibility: hidden !important;
         }
         
         /* The text container */
