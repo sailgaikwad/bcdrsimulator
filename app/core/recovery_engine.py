@@ -85,8 +85,11 @@ class RecoveryEngine:
 
         Returns:
             (recovery_plan, recovery_complete_event) or (None, None) if
-            resources are insufficient.
+            resources are insufficient or already recovering.
         """
+        if system_id in self._active_plans:
+            return None, None
+            
         if not self.can_start_recovery(strategy):
             self._scoring.record(
                 category=ScoreCategory.RESOURCE_EFFICIENCY,
@@ -184,7 +187,7 @@ class RecoveryEngine:
 
         plan.completion_time = completion_time
         plan.success = True
-        self._resources.release()
+        self._resources.release(plan.resources_used)
         self._completed_plans.append(plan)
 
         self._scoring.record(

@@ -306,3 +306,57 @@ def test_finserve_dependency_propagation():
     
     # Now Application Cluster drops to 0.0
     assert engine.system_states["sys-app"].effective_availability == 0.0
+
+def test_recovery_resource_accounting():
+    """Verify team capacity and budget allocation/release rules."""
+    from app.models.recovery import RecoveryStrategy
+    from app.models.enums import StrategyType
+    
+    g = DependencyGraph()
+    g.add_system(System(id="sys-1", org_id="org1", name="Sys 1", system_type=SystemType.SERVER))
+    g.add_system(System(id="sys-2", org_id="org1", name="Sys 2", system_type=SystemType.SERVER))
+    
+    run_data = SimulationRun(id="run1", org_id="org1", scenario_id="scen1", rng_seed=42)
+    pool = ResourcePool(team_capacity=5, budget_remaining=1000.0)
+    engine = SimulationEngine(run_data, g, [], {}, pool)
+    
+    strat1 = RecoveryStrategy(
+        name="Strat 1",
+        strategy_type=StrategyType.FAILOVER,
+        optimistic_hours=1, likely_hours=2, pessimistic_hours=3,
+        resource_cost=2, monetary_cost=500.0
+    )
+    
+    # 1 & 2. Successful team reservation & budget deduction
+    plan, evt = engine.recovery.start_recovery("sys-1", strat1, 0.0)
+    assert plan is not None
+    assert engine.recovery.resource_pool.team_capacity == 3
+    assert engine.recovery.resource_pool.budget_remaining == 500.0
+    
+    # 6. No double deduction (idempotency)
+    plan2, evt2 = engine.recovery.start_recovery("sys-1", strat1, 0.0)
+    assert plan2 is None
+    assert engine.recovery.resource_pool.team_capacity == 3  # Unchanged
+    
+    # 3 & 4. Insufficient capacity and budget
+    strat_expensive = RecoveryStrategy(
+        name="Strat Expensive",
+        strategy_type=StrategyType.BACKUP_RESTORE,
+        optimistic_hours=1, likely_hours=2, pessimistic_hours=3,
+        resource_cost=4, monetary_cost=600.0
+    )
+    
+    plan3, evt3 = engine.recovery.start_recovery("sys-2", strat_expensive, 0.0)
+    assert plan3 is None
+    
+    # 5. Release on completion
+    engine.schedule_event(evt)
+    engine.step()  # Process RECOVERY_COMPLETE
+    assert engine.recovery.resource_pool.team_capacity == 5
+    assert engine.recovery.resource_pool.budget_remaining == 500.0  # Budget is consumed permanently
+    
+    # 7. Reset restoring the original pool (simulated by creating a new engine)
+    pool_reset = ResourcePool(team_capacity=5, budget_remaining=1000.0)
+    engine_reset = SimulationEngine(run_data, g, [], {}, pool_reset)
+    assert engine_reset.recovery.resource_pool.team_capacity == 5
+    assert engine_reset.recovery.resource_pool.budget_remaining == 1000.0

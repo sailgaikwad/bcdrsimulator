@@ -261,8 +261,8 @@ class TestResourcePool:
         assert pool.can_start_recovery(1.0, 5000)
 
     def test_cannot_start_over_capacity(self):
-        pool = ResourcePool(team_capacity=1, active_recoveries=1)
-        assert not pool.can_start_recovery(1.0, 0)
+        pool = ResourcePool(team_capacity=1, active_recoveries=0)
+        assert not pool.can_start_recovery(2.0, 0)
 
     def test_cannot_start_over_budget(self):
         pool = ResourcePool(team_capacity=3, budget_remaining=100)
@@ -272,6 +272,8 @@ class TestResourcePool:
         pool = ResourcePool(team_capacity=2, budget_remaining=10000)
         pool.allocate(1.0, 3000)
         assert pool.active_recoveries == 1
+        assert pool.team_capacity == 1
         assert pool.budget_remaining == 7000
-        pool.release()
+        pool.release(1.0)
         assert pool.active_recoveries == 0
+        assert pool.team_capacity == 2

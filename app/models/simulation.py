@@ -186,15 +186,17 @@ class ResourcePool(BaseModel):
     def can_start_recovery(self, resource_cost: float, monetary_cost: float) -> bool:
         """Check if resources are available to start a new recovery."""
         return (
-            self.active_recoveries < self.team_capacity
+            self.team_capacity >= int(resource_cost)
             and self.budget_remaining >= monetary_cost
         )
 
     def allocate(self, resource_cost: float, monetary_cost: float) -> None:
         """Consume resources for a recovery action."""
         self.active_recoveries += 1
+        self.team_capacity -= int(resource_cost)
         self.budget_remaining -= monetary_cost
 
-    def release(self) -> None:
+    def release(self, resource_cost: float) -> None:
         """Free a recovery slot when an action completes."""
         self.active_recoveries = max(0, self.active_recoveries - 1)
+        self.team_capacity += int(resource_cost)

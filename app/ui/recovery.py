@@ -47,16 +47,19 @@ def render():
     
     # Action
     if st.button("Initiate Recovery", type="primary"):
-        # We start recovery. The engine will sample the exact duration probabilistically.
-        plan, evt = engine.recovery.start_recovery(target_sys, selected_strat, engine.current_time)
-        
-        if plan:
-            st.success("Recovery plan accepted by constraints.")
-            st.write(f"**Sampled Recovery Duration:** {plan.actual_duration:.2f} hours")
-            st.info("The recovery completion event has been scheduled. Head to the **Simulation** tab and step the simulation to complete the recovery.")
-            engine.schedule_event(evt)
+        if target_sys in engine.recovery._active_plans:
+            st.warning("A recovery is already active for this system.")
         else:
-            st.error("Recovery plan rejected! (Resource constraints exceeded)")
+            # We start recovery. The engine will sample the exact duration probabilistically.
+            plan, evt = engine.recovery.start_recovery(target_sys, selected_strat, engine.current_time)
+            
+            if plan:
+                st.success("Recovery plan accepted by constraints.")
+                st.write(f"**Sampled Recovery Duration:** {plan.actual_duration:.2f} hours")
+                st.info("The recovery completion event has been scheduled. Head to the **Simulation** tab and step the simulation to complete the recovery.")
+                engine.schedule_event(evt)
+            else:
+                st.error("Recovery plan rejected! (Resource constraints exceeded)")
             
     st.markdown("---")
     st.subheader("Current Resource Pool")
