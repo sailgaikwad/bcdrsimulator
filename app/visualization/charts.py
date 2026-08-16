@@ -4,30 +4,59 @@ import pandas as pd
 from app.core.simulation_engine import SimulationEngine
 
 def generate_score_timeline(engine: SimulationEngine) -> go.Figure:
-    """Generates a line chart tracking the resilience score over time."""
+    """
+    Generates a line chart tracking the resilience score over time.
+
+    Replays the ledger chronologically, maintaining per-category running totals
+    and computing a weighted composite score at each event — identical to the
+    logic in ScoringEngine.get_composite_score(). This ensures the final point
+    on the chart always matches the Resilience Score shown on the Dashboard.
+    """
+    from app.core.scoring import CATEGORY_WEIGHTS
+    from app.models.enums import ScoreCategory
+
     ledger = engine.scoring.get_ledger()
     if not ledger:
         return go.Figure()
-        
+
+    _BASE_SCORE = 100.0
+
+    # Per-category running totals, starting at base
+    category_totals: dict = {cat: _BASE_SCORE for cat in ScoreCategory}
+
+    def _composite(totals: dict) -> float:
+        total = 0.0
+        for cat, weight in CATEGORY_WEIGHTS.items():
+            total += max(0.0, min(100.0, totals[cat])) * weight
+        return round(total, 2)
+
     times = [0.0]
-    scores = [100.0]  # Base score
-    
-    current_score = 100.0
+    scores = [_composite(category_totals)]  # Starting composite (100.0)
+
     for evt in ledger:
-        current_score += evt.delta
+        category_totals[evt.category] += evt.delta
         times.append(evt.event_time)
-        scores.append(current_score)
-        
-    # Append current time to extend line
+        scores.append(_composite(category_totals))
+
+    # Extend the line to the current simulation clock if no recent events
     if times[-1] < engine.current_time:
         times.append(engine.current_time)
-        scores.append(current_score)
-        
+        scores.append(scores[-1])
+
+    final_score = engine.scoring.get_composite_score()
+
     fig = px.line(x=times, y=scores, markers=True, title="Composite Resilience Score Timeline")
+    fig.add_hline(
+        y=final_score,
+        line_dash="dot",
+        line_color="cyan",
+        annotation_text=f"Current: {final_score:.1f}",
+        annotation_position="bottom right",
+    )
     fig.update_layout(
         xaxis_title="Simulation Time (Hours)",
         yaxis_title="Score",
-        yaxis_range=[0, 100]
+        yaxis_range=[0, 100],
     )
     return fig
 

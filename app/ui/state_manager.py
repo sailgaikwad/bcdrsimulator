@@ -128,37 +128,41 @@ def _load_finserve_demo(db: SQLiteManager):
     for s in [strat_restore, strat_failover, strat_pitr, strat_promote, strat_restart, strat_cache, strat_reroute]:
         strat_repo.save(s)
 
-    # Scenarios
+    # Scenarios — each scenario has a distinct, realistic severity level
     scenario_db = DisasterScenario(
         id="scen-db-fail-cascade", name="Primary Database Failure", category=DisasterCategory.DATABASE_FAILURE,
+        description="Primary database suffers a total failure, breaking replication and halting all DB-dependent services.",
         affected_systems=[AffectedSystem(system_id="sys-db-pri", health_impact=1.0)],
-        severity=1.0
+        severity=0.9  # Critical — DB is the core SPOF, but other tiers are initially untouched
     )
     scenario_az = DisasterScenario(
         id="scen-az-outage", name="Datacenter / AZ Outage", category=DisasterCategory.INFRASTRUCTURE_OUTAGE,
+        description="A full availability zone goes offline, simultaneously impacting gateway, firewall, and application tier.",
         affected_systems=[
             AffectedSystem(system_id="sys-igw", health_impact=1.0),
             AffectedSystem(system_id="sys-fw", health_impact=0.8),
             AffectedSystem(system_id="sys-app", health_impact=0.6)
         ],
-        severity=1.0
+        severity=1.0  # Maximum — entire zone is affected
     )
     scenario_ransomware = DisasterScenario(
         id="scen-ransomware", name="Ransomware Attack", category=DisasterCategory.CYBER_ATTACK,
+        description="Ransomware encrypts the primary database and backup systems, corrupting the replication pipeline.",
         affected_systems=[
             AffectedSystem(system_id="sys-db-pri", health_impact=1.0),
             AffectedSystem(system_id="sys-backup", health_impact=0.9),
             AffectedSystem(system_id="sys-db-rep", health_impact=0.7)
         ],
-        severity=1.0
+        severity=0.95  # Near-maximum — data integrity is at risk across storage tier
     )
     scenario_app_crash = DisasterScenario(
         id="scen-app-crash", name="Application Cluster Crash", category=DisasterCategory.SERVER_FAILURE,
+        description="Application servers crash due to an OOM event; cache is also evicted, causing a cold-start storm.",
         affected_systems=[
             AffectedSystem(system_id="sys-app", health_impact=1.0),
             AffectedSystem(system_id="sys-cache", health_impact=0.8)
         ],
-        severity=0.8
+        severity=0.7  # Significant but contained — DB and network tiers remain healthy
     )
     for s in [scenario_db, scenario_az, scenario_ransomware, scenario_app_crash]:
         scenario_repo.save(s)

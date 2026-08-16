@@ -148,12 +148,11 @@ def generate_plotly_graph(engine: SimulationEngine, db: SQLiteManager) -> go.Fig
                     y=1.0,
                     xref='paper',
                     yref='paper',
-                    text='<b>Legend</b><br>🟢 Healthy (100%)<br>🔵 Recovering<br>🟠 Degraded<br>🔴 Failed (0%)<br>--- Hard Edge<br>- - Sync Edge<br>··· Disrupted Edge',
+                    text='<b>Legend</b><br>🟢 Healthy (100%)<br>🔵 Recovering<br>🟠 Degraded<br>🔴 Failed (0%)<br>─── Hard Edge<br>- - Sync Edge<br>··· Disrupted Edge',
                     showarrow=False,
                     align='left',
-                    bgcolor='rgba(255,255,255,0.8)',
-                    bordercolor='black',
-                    borderwidth=1
+                    bgcolor='rgba(0,0,0,0)',
+                    borderwidth=0
                 )]
              )
     )
