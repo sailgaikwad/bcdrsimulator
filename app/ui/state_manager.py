@@ -252,6 +252,12 @@ def save_current_run(engine: SimulationEngine):
     ]
     
     # 3. Serialize and save to local SQLite FIRST
+    engine.run_data.final_resilience_score = engine.scoring.get_composite_score()
+    engine.run_data.total_downtime_hours = sum(
+        engine.bia.get_impact(svc.id).downtime_hours
+        for svc in engine.services
+        if engine.bia.get_impact(svc.id) is not None
+    )
     engine.run_data.state_snapshot_json = json.dumps(state_snapshot)
     engine.run_data.event_ledger_json = json.dumps(ledger)
     engine.run_data.schema_version = "1.0"
