@@ -63,7 +63,7 @@ def render():
     
     st.subheader("Simulation Timeline")
     fig_gantt = charts.generate_timeline_gantt(engine)
-    st.plotly_chart(fig_gantt, use_container_width=True, key="timeline_chart")
+    st.plotly_chart(fig_gantt, use_container_width=True, key=f"timeline_chart_{len(engine.processed_events)}")
 
     st.markdown("---")
     

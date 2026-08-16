@@ -68,7 +68,7 @@ def render():
         
         st.subheader("RTO & MTPD Visualization")
         fig_rto = charts.generate_rto_comparison(engine)
-        st.plotly_chart(fig_rto, use_container_width=True, key="rto_chart")
+        st.plotly_chart(fig_rto, use_container_width=True, key=f"rto_chart_{len(engine.processed_events)}")
     else:
         st.write("No services affected yet.")
         
@@ -76,7 +76,7 @@ def render():
     
     st.subheader("Score Timeline")
     fig_score = charts.generate_score_timeline(engine)
-    st.plotly_chart(fig_score, use_container_width=True, key="score_chart")
+    st.plotly_chart(fig_score, use_container_width=True, key=f"score_chart_{len(engine.processed_events)}")
 
     st.markdown("---")
     
@@ -107,4 +107,4 @@ def render():
     st.subheader("Impact Flow Diagram")
     st.markdown("Visualizing the technical failure cascading to service degradation and ultimate business outcome.")
     fig_flow = charts.generate_impact_flow(engine)
-    st.plotly_chart(fig_flow, use_container_width=True, key="impact_flow")
+    st.plotly_chart(fig_flow, use_container_width=True, key=f"impact_flow_{len(engine.processed_events)}")

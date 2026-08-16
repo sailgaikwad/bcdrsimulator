@@ -15,6 +15,9 @@ def render():
     st.markdown("Interactive visualization of the current dependency network and health status.")
     
     fig = generate_plotly_graph(engine, db)
-    st.plotly_chart(fig, use_container_width=True)
+    # Use a dynamic key based on processed events to force Streamlit to redraw the Plotly component
+    # when the simulation state changes, bypassing shallow React/Plotly diffing bugs.
+    dynamic_key = f"dep_graph_{len(engine.processed_events)}"
+    st.plotly_chart(fig, use_container_width=True, key=dynamic_key)
     
     st.info("🟢 Healthy (100%) | 🟠 Degraded (1-99%) | 🔴 Failed (0%)")
