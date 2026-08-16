@@ -2,6 +2,7 @@ import streamlit as st
 from app.core.simulation_engine import SimulationEngine
 import app.ui.state_manager as state_manager
 from app.visualization import charts
+from app.models.enums import SimulationStatus
 
 def render():
     st.header("Simulation Engine Control")
@@ -46,7 +47,7 @@ def render():
             st.rerun()
             
     with ctrl_col4:
-        is_completed = engine.current_time > 0 and engine.events.is_empty()
+        is_completed = engine.run_data.status == SimulationStatus.COMPLETED
         if st.button("💾 Save Run", disabled=not is_completed, type="primary"):
             try:
                 state_manager.save_current_run(engine)
@@ -71,7 +72,7 @@ def render():
     
     ledger = engine.scoring.get_ledger()
     if not ledger:
-        st.info("No events logged yet. Trigger the disaster to begin.")
+        st.info("No business impacts logged yet. Score ledger is empty.")
     else:
         log_data = []
         for l in ledger:
@@ -82,6 +83,23 @@ def render():
                 "Description": l.reason
             })
         st.dataframe(log_data, use_container_width=True)
+
+    st.markdown("---")
+    
+    st.subheader("Processed Event Ledger")
+    
+    if not engine.processed_events:
+        st.info("No events have been processed yet.")
+    else:
+        event_data = []
+        for e in engine.processed_events:
+            event_data.append({
+                "Time (h)": f"{e.time:.2f}",
+                "System": e.system_id,
+                "Event": e.event_type.name,
+                "Description": e.description
+            })
+        st.dataframe(event_data, use_container_width=True)
 
     # Detailed State
     st.subheader("Current State Snapshots")

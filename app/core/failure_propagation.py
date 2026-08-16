@@ -84,12 +84,10 @@ class FailurePropagationEngine:
             weight = edge_data.get("weight", 1.0)
             dep_type = edge_data.get("dep_type", "hard")
 
-            if dep_type == DependencyType.HARD.value or dep_type == DependencyType.HARD:
+            if dep_type == DependencyType.DATA_SYNC.value or dep_type == DependencyType.DATA_SYNC:
+                continue
+            elif dep_type == DependencyType.HARD.value or dep_type == DependencyType.HARD:
                 # Hard dependency: multiplicative reduction
-                # If upstream is at 0.5 eff and weight is 1.0:
-                #   factor = 0.5 * 1.0 + (1 - 1.0) = 0.5
-                # If weight is 0.3:
-                #   factor = 0.5 * 0.3 + (1 - 0.3) = 0.85
                 hard_factor *= (upstream_eff * weight + (1.0 - weight))
             else:
                 # Soft dependency: additive penalty
@@ -135,74 +133,52 @@ class FailurePropagationEngine:
 
         return changes
 
-    def compute_initial_cascade(
+    def get_initial_failure_events(
         self,
         initially_damaged: dict[str, float],
-        system_states: dict[str, SystemState],
         run_id: str,
         base_time: float,
     ) -> list[SimulationEvent]:
-        """
-        Apply initial damage and compute the full propagation cascade.
-
-        Args:
-            initially_damaged: {system_id: health_impact} for directly hit systems
-            system_states: Current state of all systems
-            run_id: Simulation run ID
-            base_time: Current simulation time
-
-        Returns:
-            List of propagation events for downstream degradation
-        """
+        """Generate the initial FAILURE events without mutating state."""
         events = []
-
-        # Apply direct damage first
         for system_id, damage in initially_damaged.items():
-            state = system_states.get(system_id)
-            if state is not None:
-                state.apply_damage(damage, base_time)
-
-        # Propagate through the graph
-        changes = self.propagate_all(system_states)
-
-        # Create propagation events for significantly affected systems
-        for system_id, new_eff in changes.items():
-            if system_id in initially_damaged:
-                continue  # Skip directly damaged (already handled)
-
-            state = system_states.get(system_id)
-            if state is None:
-                continue
-
             node_data = self._graph.get_node_data(system_id)
             name = node_data.get("name", system_id) if node_data else system_id
+            events.append(SimulationEvent(
+                run_id=run_id,
+                event_type=EventType.FAILURE,
+                time=base_time,
+                priority=1,
+                system_id=system_id,
+                description=f"Initial failure triggered for {name}",
+                payload={
+                    "damage": damage,
+                    "cause": "disaster_trigger",
+                },
+            ))
+        return events
 
+    def get_downstream_propagation_events(
+        self,
+        system_id: str,
+        run_id: str,
+        base_time: float,
+    ) -> list[SimulationEvent]:
+        """Generate PROPAGATION events for immediate downstream neighbors."""
+        events = []
+        for target_id, _ in self._graph.get_downstream(system_id):
+            node_data = self._graph.get_node_data(target_id)
+            name = node_data.get("name", target_id) if node_data else target_id
             events.append(SimulationEvent(
                 run_id=run_id,
                 event_type=EventType.PROPAGATION,
-                time=base_time + 0.01,  # Slightly after initial failure
+                time=base_time,  # Use same time; queue priority handles ordering
                 priority=3,
-                system_id=system_id,
-                description=(
-                    f"Failure propagated to {name}: "
-                    f"effective availability dropped to {new_eff:.1%}"
-                ),
+                system_id=target_id,
+                description=f"Evaluating propagation impact for {name}",
                 payload={
-                    "system_id": system_id,
-                    "new_effective_availability": new_eff,
-                    "cause": "dependency_propagation",
+                    "cause": "upstream_change",
+                    "upstream_id": system_id
                 },
             ))
-
         return events
-
-    def recompute_after_recovery(
-        self,
-        recovered_system_id: str,
-        system_states: dict[str, SystemState],
-    ) -> dict[str, float]:
-        """
-        Recompute propagation after a system recovers.
-        Some downstream systems may improve as a result.
-        """
-        return self.propagate_all(system_states)

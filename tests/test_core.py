@@ -288,8 +288,21 @@ def test_finserve_dependency_propagation():
     # Trigger Disaster (Event 1): Primary DB fails 100%
     engine.trigger_disaster({"sys-db-pri": 1.0})
     
-    # compute_initial_cascade propagates immediately
+    # State changes immediately for the explicitly failed node (Primary DB)
     assert engine.system_states["sys-db-pri"].health == 0.0
     
-    # Now Application Cluster should have effective availability 0.0 due to HARD dependency on DB
+    # App Cluster effective_availability remains 1.0 until propagation event is processed
+    assert engine.system_states["sys-app"].effective_availability == 1.0
+    
+    # Verify initial FAILURE event was recorded
+    assert len(engine.processed_events) == 1
+    assert engine.processed_events[0].event_type == EventType.FAILURE
+    assert engine.processed_events[0].system_id == "sys-db-pri"
+    
+    # Downstream propagation event is pending
+    evt2 = engine.step()
+    assert evt2.event_type == EventType.PROPAGATION
+    assert evt2.system_id == "sys-app"
+    
+    # Now Application Cluster drops to 0.0
     assert engine.system_states["sys-app"].effective_availability == 0.0

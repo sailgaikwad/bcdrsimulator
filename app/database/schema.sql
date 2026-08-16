@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS dependencies (
     org_id TEXT NOT NULL REFERENCES organizations(id),
     source_id TEXT NOT NULL REFERENCES systems(id),
     target_id TEXT NOT NULL REFERENCES systems(id),
-    dep_type TEXT NOT NULL CHECK(dep_type IN ('hard', 'soft')),
+    dep_type TEXT NOT NULL CHECK(dep_type IN ('hard', 'soft', 'data_sync')),
     weight REAL DEFAULT 1.0 CHECK(weight BETWEEN 0.0 AND 1.0),
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

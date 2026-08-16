@@ -93,6 +93,7 @@ def test_recovery_planning_integration():
     if trigger_btn:
         trigger_btn.click().run()
         
+    # No step_btn needed because primary DB fails immediately
     at.sidebar.radio[0].set_value("Recovery Planning").run()
     assert not at.exception
     assert "Recovery Planning" in at.header[0].value

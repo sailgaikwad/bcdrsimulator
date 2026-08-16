@@ -90,6 +90,8 @@ def _load_finserve_demo(db: SQLiteManager):
         Dependency(id="d2", org_id=org.id, source_id=sys_fw.id, target_id=sys_app.id, dep_type=DependencyType.HARD),
         Dependency(id="d3", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_app.id, dep_type=DependencyType.HARD),
         Dependency(id="d4", org_id=org.id, source_id=sys_cache.id, target_id=sys_app.id, dep_type=DependencyType.SOFT, weight=0.3),
+        Dependency(id="d5", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_db_replica.id, dep_type=DependencyType.DATA_SYNC),
+        Dependency(id="d6", org_id=org.id, source_id=sys_db_primary.id, target_id=sys_backup.id, dep_type=DependencyType.DATA_SYNC),
     ]
     for dep in deps:
         dep_repo.save(dep)

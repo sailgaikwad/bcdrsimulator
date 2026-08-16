@@ -217,3 +217,27 @@ class TestGraphAnalysis:
         # PageRank values should sum to ~1.0
         total = sum(metrics.pagerank.values())
         assert abs(total - 1.0) < 0.01
+
+    def test_network_graph_rendering_regression(self):
+        """Regression test for Bug: AttributeError: 'System' object has no attribute 'sys_type'"""
+        from app.visualization.network_graph import generate_plotly_graph
+        from app.core.simulation_engine import SimulationEngine
+        from app.models.simulation import SimulationRun, ResourcePool
+        from app.database.sqlite_manager import SQLiteManager
+        
+        g = self._build_branching_graph()
+        
+        run_data = SimulationRun(id="run1", org_id="org1", scenario_id="scen1", rng_seed=42)
+        engine = SimulationEngine(
+            run_data=run_data,
+            dep_graph=g,
+            services=[],
+            service_systems_map={},
+            resource_pool=ResourcePool()
+        )
+        
+        db = SQLiteManager(":memory:")
+        db.initialize()
+        # Build the graph to ensure no AttributeError is thrown
+        fig = generate_plotly_graph(engine, db)
+        assert fig is not None

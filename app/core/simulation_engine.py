@@ -20,7 +20,7 @@ import random
 from typing import Optional, Any
 
 from app.models.simulation import SimulationRun, SimulationEvent, ResourcePool
-from app.models.enums import EventType, SimulationStatus
+from app.models.enums import EventType, SimulationStatus, SystemStatus
 from app.models.system import SystemState
 from app.models.organization import BusinessService
 from app.graph.dependency_graph import DependencyGraph
@@ -59,6 +59,7 @@ class SimulationEngine:
 
         # Core engines
         self.events = EventQueue()
+        self.processed_events = []
         self.scoring = ScoringEngine(run_data.id)
         self.investigation = InvestigationEngine(run_data.id, self.rng)
         self.recovery = RecoveryEngine(run_data.id, self.rng, self.scoring, resource_pool)
@@ -101,16 +102,16 @@ class SimulationEngine:
         """
         self.run_data.status = SimulationStatus.RUNNING
         
-        # Use propagation engine to calculate cascade
-        cascade_events = self.propagation.compute_initial_cascade(
-            initially_damaged=initial_damage,
-            system_states=self.system_states,
-            run_id=self.run_data.id,
-            base_time=self.current_time,
+        events = self.propagation.get_initial_failure_events(
+            initial_damage,
+            self.run_data.id,
+            self.current_time,
         )
 
-        for event in cascade_events:
-            self.schedule_event(event)
+        for event in events:
+            # Process the initial disaster impact immediately
+            self._handle_failure(event)
+            self.processed_events.append(event)
 
         # Update BIA after initial impact
         self._update_bia(dt=0.0)
@@ -145,6 +146,7 @@ class SimulationEngine:
         elif event.event_type == EventType.USER_DECISION:
             self._handle_user_decision(event)
 
+        self.processed_events.append(event)
         return event
 
     def run_until_empty(self) -> None:
@@ -186,23 +188,53 @@ class SimulationEngine:
         state = self.system_states.get(sys_id)
         if state:
             state.apply_damage(damage, self.current_time)
+            state.effective_availability = self.propagation.compute_effective_availability(sys_id, self.system_states)
             
-            # Recompute propagation and schedule downstream effects
-            changes = self.propagation.propagate_all(self.system_states)
-            for affected_id, new_eff in changes.items():
-                if affected_id != sys_id:
-                    self.schedule_event(SimulationEvent(
-                        run_id=self.run_data.id,
-                        event_type=EventType.PROPAGATION,
-                        time=self.current_time + 0.01,
-                        priority=3,
-                        system_id=affected_id,
-                        description=f"Failure propagated to {affected_id}",
-                    ))
+            # Schedule downstream effects
+            prop_events = self.propagation.get_downstream_propagation_events(
+                sys_id, self.run_data.id, self.current_time
+            )
+            for e in prop_events:
+                self.schedule_event(e)
 
     def _handle_propagation(self, event: SimulationEvent) -> None:
-        """Handle a propagation event (state is already updated by propagation engine)."""
-        pass # The actual state update happened during the compute_initial_cascade or _handle_failure
+        """Handle a propagation event."""
+        sys_id = event.system_id
+        if not sys_id:
+            return
+            
+        state = self.system_states.get(sys_id)
+        if not state:
+            return
+            
+        old_eff = state.effective_availability
+        new_eff = self.propagation.compute_effective_availability(sys_id, self.system_states)
+        
+        if abs(old_eff - new_eff) > 0.001:
+            state.effective_availability = new_eff
+            
+            # Update status
+            if new_eff == 0.0:
+                if state.status != SystemStatus.FAILED:
+                    state.status = SystemStatus.FAILED
+            elif new_eff < 1.0:
+                if state.status == SystemStatus.OPERATIONAL:
+                    state.status = SystemStatus.DEGRADED
+            elif new_eff == 1.0:
+                if state.status != SystemStatus.OPERATIONAL:
+                    state.status = SystemStatus.OPERATIONAL
+                    
+            # Since this node changed, propagate further downstream
+            prop_events = self.propagation.get_downstream_propagation_events(
+                sys_id, self.run_data.id, self.current_time
+            )
+            for e in prop_events:
+                self.schedule_event(e)
+                
+            # Log the change
+            event.description += f" -> state changed from {old_eff:.1%} to {new_eff:.1%}"
+        else:
+            event.description += " -> no change in availability"
 
     def _handle_recovery_start(self, event: SimulationEvent) -> None:
         """Handle the start of a recovery action."""
@@ -220,19 +252,14 @@ class SimulationEngine:
             state = self.system_states.get(sys_id)
             if state:
                 state.apply_recovery(plan.health_restored, self.current_time)
+                state.effective_availability = self.propagation.compute_effective_availability(sys_id, self.system_states)
                 
-                # Recompute propagation (things might come back online)
-                changes = self.propagation.recompute_after_recovery(sys_id, self.system_states)
-                for affected_id, new_eff in changes.items():
-                    if affected_id != sys_id:
-                        self.schedule_event(SimulationEvent(
-                            run_id=self.run_data.id,
-                            event_type=EventType.PROPAGATION,
-                            time=self.current_time + 0.01,
-                            priority=3,
-                            system_id=affected_id,
-                            description=f"Recovery propagated to {affected_id}",
-                        ))
+                # Recompute propagation downstream
+                prop_events = self.propagation.get_downstream_propagation_events(
+                    sys_id, self.run_data.id, self.current_time
+                )
+                for e in prop_events:
+                    self.schedule_event(e)
                 
                 # Tell BIA about technical recovery (simplification: if eff_avail >= 1.0)
                 if state.effective_availability >= 1.0:

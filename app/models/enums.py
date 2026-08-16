@@ -49,6 +49,7 @@ class DependencyType(str, Enum):
     """
     HARD = "hard"
     SOFT = "soft"
+    DATA_SYNC = "data_sync"
 
 
 class StrategyType(str, Enum):
