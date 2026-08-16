@@ -30,36 +30,33 @@ def render():
         ctrl_col1, ctrl_col2, ctrl_col3, ctrl_col4 = st.columns(4)
         
         with ctrl_col1:
-            if st.button("🚨 Trigger Disaster", disabled=engine.current_time > 0):
+            if st.button("Trigger Disaster", disabled=engine.current_time > 0):
                 impacts = {a.system_id: a.health_impact for a in scenario.affected_systems}
                 engine.trigger_disaster(impacts)
                 st.success("Disaster triggered!")
                 st.rerun()
                 
         with ctrl_col2:
-            if st.button("⏭️ Step Event", disabled=engine.events.is_empty()):
+            if st.button("Step Event", disabled=engine.events.is_empty()):
                 evt = engine.step()
                 st.toast(f"Executed: {evt.event_type.name} at T={evt.time:.2f}")
                 st.rerun()
                 
         with ctrl_col3:
-            if st.button("⏩ Run Until Empty", disabled=engine.events.is_empty()):
+            if st.button("Run Until Empty", disabled=engine.events.is_empty()):
                 engine.run_until_empty()
                 st.rerun()
                 
         with ctrl_col4:
             is_completed = engine.run_data.status == SimulationStatus.COMPLETED
-            if st.button("💾 Save Run", disabled=not is_completed, type="primary"):
+            if st.button("Save Run", disabled=not is_completed, type="primary"):
                 try:
                     state_manager.save_current_run(engine)
                     st.success("Run saved successfully!")
                 except Exception as e:
                     st.error(f"Failed to save run: {str(e)}")
 
-        st.markdown("<br/>", unsafe_allow_html=True)
-        if st.button("🔄 Reset Simulation"):
-            state_manager.reset_simulation()
-            st.rerun()
+
 
     st.markdown("---")
     

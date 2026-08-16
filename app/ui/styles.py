@@ -13,18 +13,18 @@ def inject_custom_css():
 
         /* Color Palette Overrides */
         :root {
-            --primary-color: #3b82f6; /* Blue 500 */
-            --primary-hover: #2563eb; /* Blue 600 */
-            --primary-light: #eff6ff; /* Blue 50 */
-            --bg-color: #f3f4f6;      /* Gray 100 */
-            --card-bg: #ffffff;
-            --text-main: #111827;     /* Gray 900 */
-            --text-muted: #6b7280;    /* Gray 500 */
-            --success: #10b981;       /* Emerald 500 */
-            --warning: #f59e0b;       /* Amber 500 */
-            --danger: #f43f5e;        /* Rose 500 */
-            --info: #0ea5e9;          /* Sky 500 */
-            --border-color: #e5e7eb;  /* Gray 200 */
+            --primary-color: #374151; /* Gray 700 (Buttons) */
+            --primary-hover: #4b5563; /* Gray 600 */
+            --primary-light: #1f2937; /* Gray 800 (Active sidebar) */
+            --bg-color: #000000;      /* Pure black */
+            --card-bg: #111827;       /* Very dark gray */
+            --text-main: #f9fafb;     /* White/Light gray */
+            --text-muted: #9ca3af;    /* Gray 400 */
+            --success: #10b981;       
+            --warning: #f59e0b;       
+            --danger: #f43f5e;        
+            --info: #0ea5e9;          
+            --border-color: #374151;  /* Gray 700 */
         }
         
         /* Main Application Background */
@@ -70,10 +70,10 @@ def inject_custom_css():
         /* Style the active selected state */
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
             background-color: var(--primary-light) !important;
-            color: var(--primary-color) !important;
+            color: var(--text-main) !important;
         }
         div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] p {
-            color: var(--primary-color) !important;
+            color: var(--text-main) !important;
             font-weight: 600;
         }
 
@@ -108,9 +108,9 @@ def inject_custom_css():
         /* Container Border Overrides to look like tailwind cards */
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
             border-radius: 1.25rem !important; /* Large rounded corners */
-            border: none !important;           /* Remove border, rely on shadow */
+            border: 1px solid var(--border-color) !important; /* Add subtle border for dark mode */
             background-color: var(--card-bg) !important;
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 3px rgba(0,0,0,0.02) !important; /* Soft, diffused shadow */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important; /* Darker shadow */
             padding: 1.5rem !important;
         }
 
