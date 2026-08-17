@@ -12,36 +12,22 @@ def inject_custom_css():
             font-family: 'Inter', sans-serif;
         }
 
-        /* Color Palette Overrides */
+        /* Semantic Color Palette */
         :root {
-            --primary-color: #374151; /* Gray 700 (Buttons) */
-            --primary-hover: #4b5563; /* Gray 600 */
-            --primary-light: #1f2937; /* Gray 800 (Active sidebar) */
-            --bg-color: #000000;      /* Pure black */
-            --card-bg: #111827;       /* Very dark gray */
-            --text-main: #f9fafb;     /* White/Light gray */
-            --text-muted: #9ca3af;    /* Gray 400 */
             --success: #10b981;       
             --warning: #f59e0b;       
             --danger: #f43f5e;        
             --info: #0ea5e9;          
-            --border-color: #374151;  /* Gray 700 */
         }
         
-        /* Main Application Background */
-        .stApp {
-            background-color: var(--bg-color);
-        }
-
         /* Top Header Adjustment */
         header[data-testid="stHeader"] {
             background-color: transparent !important;
         }
 
-        /* Sidebar Styling */
+        /* Sidebar Styling Adjustment */
         section[data-testid="stSidebar"] {
-            background-color: var(--bg-color) !important; /* Pure black */
-            border-right: 1px solid var(--border-color);
+            border-right: 1px solid rgba(128, 128, 128, 0.2);
         }
         
         .st-emotion-cache-16txtl3 {
@@ -67,7 +53,7 @@ def inject_custom_css():
         }
         
         label[data-testid="stRadioOption"]:hover {
-            background-color: #111827 !important; /* Subtle hover */
+            background-color: rgba(128, 128, 128, 0.1) !important; /* Subtle hover */
         }
         
         /* Hide the radio circle! It is the sibling immediately preceding the text container. */
@@ -84,7 +70,8 @@ def inject_custom_css():
         /* The text container */
         label[data-testid="stRadioOption"] p {
             font-size: 0.95rem;
-            color: var(--text-muted);
+            color: var(--text-color);
+            opacity: 0.8;
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -97,7 +84,8 @@ def inject_custom_css():
             font-family: 'Material Symbols Outlined';
             font-size: 1.25rem;
             margin-right: 0.75rem;
-            color: var(--text-muted);
+            color: var(--text-color);
+            opacity: 0.7;
             transition: color 0.2s ease;
         }
         
@@ -116,7 +104,7 @@ def inject_custom_css():
         /* Style the active selected state */
         label[data-testid="stRadioOption"][data-selected="true"],
         label[data-testid="stRadioOption"]:has(input:checked) {
-            background-color: var(--primary-light) !important;
+            background-color: rgba(128, 128, 128, 0.15) !important;
         }
         
         /* Bright Blue (#3b82f6) for the active text and icon */
@@ -125,7 +113,16 @@ def inject_custom_css():
         label[data-testid="stRadioOption"]:has(input:checked) p,
         label[data-testid="stRadioOption"]:has(input:checked) p::before {
             color: #3b82f6 !important;
+            opacity: 1;
             font-weight: 600;
+            text-shadow: none !important;
+            box-shadow: none !important;
+        }
+        
+        /* Black shadow ONLY behind the active icon for contrast if needed */
+        label[data-testid="stRadioOption"][data-selected="true"] p::before,
+        label[data-testid="stRadioOption"]:has(input:checked) p::before {
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2) !important;
         }
 
         /* Streamlit Primary Button Styling */
@@ -148,10 +145,11 @@ def inject_custom_css():
         /* Metrics Styling */
         div[data-testid="stMetricValue"] {
             font-weight: 600 !important;
-            color: var(--text-main) !important;
+            color: var(--text-color) !important;
         }
         div[data-testid="stMetricLabel"] {
-            color: var(--text-muted) !important;
+            color: var(--text-color) !important;
+            opacity: 0.7;
             font-size: 0.875rem !important;
             font-weight: 500 !important;
         }
@@ -159,29 +157,29 @@ def inject_custom_css():
         /* Container Border Overrides to look like tailwind cards */
         div[data-testid="stVerticalBlockBorderWrapper"] > div {
             border-radius: 1.25rem !important; /* Large rounded corners */
-            border: 1px solid var(--border-color) !important; /* Add subtle border for dark mode */
-            background-color: var(--card-bg) !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important; /* Darker shadow */
+            border: 1px solid rgba(128, 128, 128, 0.2) !important; /* Subtle border */
+            background-color: var(--secondary-background-color) !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important; /* Lighter shadow */
             padding: 1.5rem !important;
         }
 
         /* Expander Styling */
         div[data-testid="stExpander"] {
-            border: 1px solid var(--border-color) !important;
+            border: 1px solid rgba(128, 128, 128, 0.2) !important;
             border-radius: 0.5rem !important;
-            background-color: var(--card-bg) !important;
+            background-color: var(--secondary-background-color) !important;
         }
         
         /* DataFrame Styling overrides */
         .stDataFrame {
             border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(128, 128, 128, 0.2);
             overflow: hidden;
         }
         
         /* Headers */
         h1, h2, h3 {
-            color: var(--text-main);
+            color: var(--text-color);
             font-weight: 600 !important;
             letter-spacing: -0.025em;
         }

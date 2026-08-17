@@ -268,7 +268,7 @@ def generate_impact_flow(engine: SimulationEngine) -> go.Figure:
         title=dict(text="Infrastructure → Service Impact Analysis", font=dict(size=15)),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1e293b", family="Inter, sans-serif"),
+        font=dict(family="Inter, sans-serif"),
         # Legend anchored top-right — never overlaps bars regardless of chart width
         legend=dict(
             orientation="h",
@@ -461,7 +461,7 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1e293b", family="Inter, sans-serif"),
+        font=dict(family="Inter, sans-serif"),
         legend=dict(
             orientation="h",
             yanchor="bottom",
