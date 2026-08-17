@@ -148,6 +148,12 @@ class SimulationEngine:
             self._handle_user_decision(event)
 
         self.processed_events.append(event)
+
+        # If the queue is empty after processing this event, and we haven't failed, mark as completed
+        if self.events.is_empty() and self.run_data.status == SimulationStatus.RUNNING:
+            self.run_data.status = SimulationStatus.COMPLETED
+            self.run_data.end_time = self.current_time
+
         return event
 
     def run_until_empty(self) -> None:
