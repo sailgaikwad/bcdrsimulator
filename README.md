@@ -16,20 +16,20 @@ flowchart TD
     
     subgraph App["Application Layer"]
         Engine["Discrete-Event Simulation Engine"]
-        Engine --> |Determinism| RNG["RNG & Seed Management"]
-        Engine --> |Impact Assessment| BIA["BIA Engine"]
+        Engine -->|"Determinism"| RNG["RNG & Seed Management"]
+        Engine -->|"Impact Assessment"| BIA["BIA Engine"]
     end
 
     subgraph Data["Persistence & Analytics (Hybrid)"]
-        SQLite[("Local SQLite (bcdr.db)\nEphemeral State / Graceful Fallback")]
-        GCS["Cloud Storage (GCS)\nDurable Archival"]
-        BQ[("BigQuery External Table\nZero-Compute Analytics")]
+        SQLite[("Local SQLite (bcdr.db)<br>Ephemeral State / Graceful Fallback")]
+        GCS["Cloud Storage (GCS)<br>Durable Archival"]
+        BQ[("BigQuery External Table<br>Zero-Compute Analytics")]
     end
 
     Streamlit <--> Engine
-    Engine --> |1. Save (Synchronous)| SQLite
-    Engine --> |2. Export (Non-Blocking)| GCS
-    GCS -.-> |External Data Definition| BQ
+    Engine -->|"1. Save (Synchronous)"| SQLite
+    Engine -->|"2. Export (Non-Blocking)"| GCS
+    GCS -.->|"External Data Definition"| BQ
 ```
 
 ### Architectural Principles
