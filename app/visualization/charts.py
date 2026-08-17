@@ -353,17 +353,25 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
 
         if rest_t is not None:
             # Fully restored — show: [Failed] then [Recovering] then [Restored]
-            if rec_t is not None and rec_t > fail_t:
-                _add_segment(label, fail_t, rec_t, COLOR_FAILED, "Failed")
+            if rec_t is not None and rec_t >= fail_t:
+                if rec_t > fail_t:
+                    _add_segment(label, fail_t, rec_t, COLOR_FAILED, "Failed")
                 _add_segment(label, rec_t, rest_t, COLOR_RECOVERING, "Recovering")
             else:
                 _add_segment(label, fail_t, rest_t, COLOR_FAILED, "Failed")
-            _add_segment(label, rest_t, current_t, COLOR_RESTORED, "Restored")
+            
+            # To make the final "Restored" state visible if it happened at the very end
+            display_end = current_t if current_t > rest_t else current_t + (current_t * 0.05 + 0.1)
+            _add_segment(label, rest_t, display_end, COLOR_RESTORED, "Restored")
 
         elif is_recovering and rec_t is not None:
             # Currently in recovery — show: [Failed] then [Recovering]
-            _add_segment(label, fail_t, rec_t, COLOR_FAILED, "Failed")
-            _add_segment(label, rec_t, current_t, COLOR_RECOVERING, "Recovering")
+            if rec_t > fail_t:
+                _add_segment(label, fail_t, rec_t, COLOR_FAILED, "Failed")
+            
+            # Pad the current time slightly so the recovering segment is visible if it just started
+            display_end = current_t if current_t > rec_t else current_t + (current_t * 0.05 + 0.1)
+            _add_segment(label, rec_t, display_end, COLOR_RECOVERING, "Recovering")
 
         elif state.effective_availability > 0.0 and state.effective_availability < 1.0:
             # Degraded but not fully failed
