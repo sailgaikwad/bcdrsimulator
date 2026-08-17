@@ -149,10 +149,17 @@ class SimulationEngine:
 
         self.processed_events.append(event)
 
-        # If the queue is empty after processing this event, and we haven't failed, mark as completed
+        # If the queue is empty after processing this event, and we haven't failed, finalize state
         if self.events.is_empty() and self.run_data.status == SimulationStatus.RUNNING:
-            self.run_data.status = SimulationStatus.COMPLETED
-            self.run_data.end_time = self.current_time
+            all_healthy = all(state.effective_availability >= 1.0 for state in self.system_states.values())
+            if all_healthy:
+                self.run_data.status = SimulationStatus.COMPLETED
+                self.run_data.end_time = self.current_time
+            else:
+                # No events left to heal systems, so time passes until the business fails!
+                while self.run_data.status == SimulationStatus.RUNNING:
+                    self.current_time += 1.0
+                    self._update_bia(1.0)
 
         return event
 
