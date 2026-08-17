@@ -62,6 +62,8 @@ class SystemState(BaseModel):
                 self.failed_at = time
         elif self.health < 1.0:
             self.status = SystemStatus.DEGRADED
+            if self.failed_at is None:
+                self.failed_at = time
 
     def apply_recovery(self, restored_health: float, time: float) -> None:
         """Increase health from recovery, clamped to [0.0, 1.0]."""

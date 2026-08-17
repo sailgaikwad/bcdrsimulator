@@ -226,16 +226,22 @@ class SimulationEngine:
         if abs(old_eff - new_eff) > 0.001:
             state.effective_availability = new_eff
 
-            # Update status
+            # Update status and timestamps
             if new_eff == 0.0:
                 if state.status != SystemStatus.FAILED:
                     state.status = SystemStatus.FAILED
+                if state.failed_at is None:
+                    state.failed_at = self.current_time
             elif new_eff < 1.0:
                 if state.status == SystemStatus.OPERATIONAL:
                     state.status = SystemStatus.DEGRADED
+                if state.failed_at is None:
+                    state.failed_at = self.current_time
             elif new_eff == 1.0:
                 if state.status != SystemStatus.OPERATIONAL:
                     state.status = SystemStatus.OPERATIONAL
+                if old_eff < 1.0:
+                    state.restored_at = self.current_time
 
             # Since this node changed, propagate further downstream
             prop_events = self.propagation.get_downstream_propagation_events(
