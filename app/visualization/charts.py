@@ -349,7 +349,7 @@ def generate_timeline_gantt(engine: SimulationEngine) -> go.Figure:
         elif state.effective_availability <= 0.0:
             _add_segment(label, 0.0, current_t, COLOR_FAILED, "Failed")
         else:
-            _add_segment(label, 0.0, current_t, COLOR_DEGRADED, f"Degraded ({state.effective_availability*100:.0f}%)")
+            _add_segment(label, 0.0, current_t, COLOR_DEGRADED, "Degraded")
 
     if not bar_traces:
         fig = go.Figure()
