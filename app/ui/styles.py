@@ -127,8 +127,7 @@ def inject_custom_css():
 
         /* Streamlit Primary Button Styling */
         button[kind="primary"] {
-            background-color: var(--primary-color) !important;
-            color: white !important;
+            background-color: #3b82f6 !important;
             border: none !important;
             border-radius: 0.5rem !important;
             padding: 0.5rem 1rem !important;
@@ -137,9 +136,13 @@ def inject_custom_css():
             transition: all 0.2s ease !important;
         }
         button[kind="primary"]:hover {
-            background-color: var(--primary-hover) !important;
+            background-color: #2563eb !important;
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1), 0 4px 6px -2px rgba(79, 70, 229, 0.05) !important;
             transform: translateY(-1px);
+        }
+        button[kind="primary"] div,
+        button[kind="primary"] p {
+            color: white !important;
         }
 
         /* Metrics Styling */
