@@ -125,7 +125,7 @@ class FailurePropagationEngine:
             new_eff = self.compute_effective_availability(system_id, system_states)
             state.effective_availability = new_eff
 
-            if abs(old_eff - new_eff) > 0.001:
+            if abs(old_eff - new_eff) > 1e-6:
                 changes[system_id] = new_eff
 
                 # Update status based on effective availability

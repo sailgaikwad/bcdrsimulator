@@ -48,8 +48,8 @@ def render():
                 st.rerun()
                 
         with ctrl_col4:
-            is_completed = engine.run_data.status == SimulationStatus.COMPLETED
-            if st.button("Save Run", disabled=not is_completed, type="primary"):
+            is_finished = engine.run_data.status in (SimulationStatus.COMPLETED, SimulationStatus.FAILED)
+            if st.button("Save Run", disabled=not is_finished, type="primary"):
                 try:
                     state_manager.save_current_run(engine)
                     st.success("Run saved successfully!")

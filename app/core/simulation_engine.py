@@ -151,7 +151,7 @@ class SimulationEngine:
 
         # If the queue is empty after processing this event, and we haven't failed, finalize state
         if self.events.is_empty() and self.run_data.status == SimulationStatus.RUNNING:
-            all_healthy = all(state.effective_availability >= 1.0 for state in self.system_states.values())
+            all_healthy = all(state.effective_availability >= 0.999 for state in self.system_states.values())
             if all_healthy:
                 self.run_data.status = SimulationStatus.COMPLETED
                 self.run_data.end_time = self.current_time
@@ -236,7 +236,7 @@ class SimulationEngine:
         old_eff = state.effective_availability
         new_eff = self.propagation.compute_effective_availability(sys_id, self.system_states)
 
-        if abs(old_eff - new_eff) > 0.001:
+        if abs(old_eff - new_eff) > 1e-6:
             state.effective_availability = new_eff
 
             # Update status and timestamps
