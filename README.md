@@ -6,7 +6,7 @@ The project focuses on how planning decisions—such as backup strategies, redun
 
 The platform simulates events such as cyberattacks, system failures, and infrastructure outages, and shows how these can spread across interconnected systems. Users are required to make decisions under realistic constraints, including limited time, budget, and incomplete information. The simulation evolves over time, introducing new challenges and forcing users to adapt their plans as conditions change. In addition, the tool supports structured teaching scenarios, allowing instructors to guide sessions, introduce new events, and compare outcomes across different strategies. This creates opportunities for discussion, reflection, and iterative improvement, which are often missing from traditional BC/DR training approaches. The expected outcome is a working prototype that can be used as an instructor-led education tool to support more practical, experience-based learning in business continuity and organizational resilience. The project is relevant to both academic and industry settings, particularly in sectors where maintaining operations is critical.
 
-## 🛠 Tech Stack
+## Tech Stack
 - **Frontend / UI:** Streamlit, Python
 - **Simulation Engine:** Custom discrete-event engine (Python)
 - **Persistence (Local):** SQLite (for ephemeral state and graceful offline capability)
@@ -14,7 +14,7 @@ The platform simulates events such as cyberattacks, system failures, and infrast
 - **Analytics:** Google BigQuery (Zero-Compute External Tables on GCS)
 - **Containerization:** Docker
 
-## 🏗 Architecture Overview
+## Architecture Overview
 
 The system employs a hybrid architecture, operating locally for fast, deterministic simulation while being enhanced by Google Cloud for durable storage and analytics.
 
@@ -50,7 +50,7 @@ flowchart TD
 
 ---
 
-## 🚀 Setup & Execution
+## Setup & Execution
 
 ### Option 1: Local Python Execution
 
@@ -81,26 +81,26 @@ Ensure you are using Python 3.14+ (the current workspace version).
 ### Option 3: Streamlit Community Cloud (Hosted)
 
 Simply visit the live, hosted application without any local setup:
-👉 **[https://bcrdsimulator.streamlit.app](https://bcrdsimulator.streamlit.app)**
+**[https://bcrdsimulator.streamlit.app](https://bcrdsimulator.streamlit.app)**
 
 ---
 
-## 📉 Demonstration Scenario
+## Demonstration Scenario
 
 The application automatically seeds a `bcdr.db` with the FinServe Demo configuration on startup. Follow these steps to demonstrate the cascading failure and BCDR recovery workflow:
 
 1. **Review Infrastructure**: Navigate to the **Dependency Graph** tab to observe the pre-configured FinServe architecture (Gateways -> Firewalls -> Apps -> DBs -> Replicas).
-2. **Inject Fault**: Go to the **Simulation** tab and click **🚨 Trigger Disaster** to simulate a Primary Database Failure.
+2. **Inject Fault**: Go to the **Simulation** tab and click **Trigger Disaster** to simulate a Primary Database Failure.
 3. **Observe Propagation**: Note how the failure cascades to dependent systems (e.g., Payment Processing and Customer Portal).
 4. **Analyze Business Impact**: View the **Dashboard** to see the Impact Flow Sankey diagram and the RTO/MTPD Bar charts reflecting the current outage.
-5. **Execute Recovery**: In the **Simulation** tab, click **⏩ Run Until Empty** to step through the automatic recovery actions and scoring penalties.
-6. **Persist Simulation**: Once the simulation completes, click **💾 Save Run**. This writes to local SQLite and transparently exports to GCS.
+5. **Execute Recovery**: In the **Simulation** tab, click **Run Until Empty** to step through the automatic recovery actions and scoring penalties.
+6. **Persist Simulation**: Once the simulation completes, click **Save Run**. This writes to local SQLite and transparently exports to GCS.
 7. **Audit the Ledger**: Navigate to the **Historical Runs** tab to view the immutable ledger and final business outcome.
 8. **Evaluate Strategies**: Navigate to the **Strategy Comparison** tab to analyze deterministic trade-offs between "Restore from Backup" vs "Failover to Replica".
 
 ---
 
-## ✅ Testing & Reproducibility
+## Testing & Reproducibility
 
 The project maintains a rigorous, fully automated test suite comprising 76 unit and UI integration tests (`AppTest`).
 
