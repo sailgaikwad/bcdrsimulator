@@ -1,12 +1,22 @@
-# BCDR Simulator
+# BCDR Simulator (Local + Google Cloud Enhanced)
 
-The BCDR Simulator is an interactive, discrete-event simulation platform for evaluating Business Continuity and Disaster Recovery (BCDR) strategies. It deterministically models how technical failures propagate through a dependency graph and assesses their impact on business services, RTO/RPO targets, and Maximum Tolerable Period of Disruption (MTPD). 
+This project focuses on building an adaptive simulation platform for business continuity and disaster recovery (BC/DR) training. While most organizations have continuity plans in place, these are often static documents that are rarely tested in realistic conditions. The aim of this project is to develop an instructor-led, interactive education tool that allows users to design and test continuity strategies in a practical and engaging way. 
 
-This project is built using a **Cloud-Native Architecture** emphasizing **Resilience Engineering**, **Fault Propagation Simulation**, and **Graceful Offline Degradation**.
+The project focuses on how planning decisions—such as backup strategies, redundancy, and resource allocation—influence outcomes during a crisis. A key part of the work is developing a simulation engine that connects these decisions to measurable impacts, including recovery time, data loss, and overall business disruption. This allows users to move beyond theoretical planning and evaluate how their choices perform under pressure. 
+
+The platform simulates events such as cyberattacks, system failures, and infrastructure outages, and shows how these can spread across interconnected systems. Users are required to make decisions under realistic constraints, including limited time, budget, and incomplete information. The simulation evolves over time, introducing new challenges and forcing users to adapt their plans as conditions change. In addition, the tool supports structured teaching scenarios, allowing instructors to guide sessions, introduce new events, and compare outcomes across different strategies. This creates opportunities for discussion, reflection, and iterative improvement, which are often missing from traditional BC/DR training approaches. The expected outcome is a working prototype that can be used as an instructor-led education tool to support more practical, experience-based learning in business continuity and organizational resilience. The project is relevant to both academic and industry settings, particularly in sectors where maintaining operations is critical.
+
+## 🛠 Tech Stack
+- **Frontend / UI:** Streamlit, Python
+- **Simulation Engine:** Custom discrete-event engine (Python)
+- **Persistence (Local):** SQLite (for ephemeral state and graceful offline capability)
+- **Persistence (Cloud):** Google Cloud Storage (GCS) via Streamlit Secrets
+- **Analytics:** Google BigQuery (Zero-Compute External Tables on GCS)
+- **Containerization:** Docker
 
 ## 🏗 Architecture Overview
 
-The system employs a hybrid persistence model and a zero-compute Serverless analytics pipeline:
+The system employs a hybrid architecture, operating locally for fast, deterministic simulation while being enhanced by Google Cloud for durable storage and analytics.
 
 ```mermaid
 flowchart TD
