@@ -1,6 +1,8 @@
 import json
 import logging
+import streamlit as st
 from google.cloud import storage
+from google.oauth2 import service_account
 from google.api_core.exceptions import GoogleAPICallError, RetryError
 from google.auth.exceptions import DefaultCredentialsError
 from app.models.simulation import SimulationRun
@@ -17,7 +19,20 @@ class GCPExporter:
     def _get_client(self):
         # Lazy initialization to handle missing ADC gracefully
         if self._client is None:
-            self._client = storage.Client()
+            try:
+                # 1. Try to load credentials from Streamlit Cloud Secrets
+                if "gcp_service_account" in st.secrets:
+                    # st.secrets converts the TOML section to a dict-like object
+                    creds_dict = dict(st.secrets["gcp_service_account"])
+                    credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                    self._client = storage.Client(credentials=credentials, project=creds_dict.get("project_id"))
+                else:
+                    # 2. Fallback to local environment Application Default Credentials (ADC)
+                    self._client = storage.Client()
+            except Exception as e:
+                logger.debug(f"Failed to load from st.secrets, falling back to local ADC: {e}")
+                self._client = storage.Client()
+                
         return self._client
 
     def export_simulation_run(self, run: SimulationRun) -> bool:
