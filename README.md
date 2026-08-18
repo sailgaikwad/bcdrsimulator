@@ -78,9 +78,14 @@ Ensure you are using Python 3.14+ (the current workspace version).
    docker run --rm -p 8501:8501 bcdrsimulator:local
    ```
 
+### Option 3: Streamlit Community Cloud (Hosted)
+
+Simply visit the live, hosted application without any local setup:
+👉 **[https://bcrdsimulator.streamlit.app](https://bcrdsimulator.streamlit.app)**
+
 ---
 
-## 📉 FinServe Demonstration Scenario
+## 📉 Demonstration Scenario
 
 The application automatically seeds a `bcdr.db` with the FinServe Demo configuration on startup. Follow these steps to demonstrate the cascading failure and BCDR recovery workflow:
 
